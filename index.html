@@ -77,6 +77,8 @@
                     clouds = [];
                     playing = false;
                     space;
+                    spaceStart = 20000;
+                    spaceOffset = 3000;
 
                     constructor($container,  $template, $mountains, $building, $space){
                         this.playing = true;
@@ -282,22 +284,19 @@
                     }
 
                     _skyColour(){
-                        var red = 58;
-                        var green =198;
+                        var red = 117;
+                        var green =215;
                         var blue = 255;
-                        var alpha = 0.7;
+                        var alpha = 1;
+                        
+                        var offsetPos = this.posY - this.spaceOffset;
 
-                        var spaceOffset = 1000;
-                        var spaceStart = 20000;
-
-                        var offsetPos = this.posY - spaceOffset;
-
-                        if(offsetPos > spaceStart ){
+                        if(offsetPos > this.spaceStart ){
                             var spacePercent = 1;
                         }else if(offsetPos < 0 ){
                             var spacePercent = 0;
                         }else{
-                            var spacePercent = this.posY > spaceStart ? 1 : this.posY/spaceStart;
+                            var spacePercent = this.posY > this.spaceStart ? 1 : (this.posY- this.spaceOffset)/this.spaceStart;
                         }
 
                         this.space.css('opacity', spacePercent/2);
@@ -517,14 +516,12 @@
 
                         
 
-                        var spaceOffset = 1000;
-                        var spaceStart = 20000;
                         var vacFactor;
                         
-                        if(this.parent.posY < spaceOffset){
+                        if(this.parent.posY < this.parent.spaceOffset){
                             vacFactor = 0;
                         }else{
-                            vacFactor = Math.min((this.parent.posY - spaceOffset)/spaceStart, 1);
+                            vacFactor = Math.min((this.parent.posY - this.parent.spaceOffset)/this.parent.spaceStart, 1);
                         }
 
                         var yTranslate = Math.floor(this.parent.deltaY*scaleFactor) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
