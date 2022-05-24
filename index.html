@@ -489,14 +489,32 @@
                         this.element.appendTo(this.parent.element.parent());
                         
                         var self = this;
-                        window.setTimeout(function(){ self.destroy(); }, 3000);
+                        window.setTimeout(function(){ self.destroy(); }, 4000);
                         window.setTimeout(function(){ self.animate(); }, 1);
                     }
 
                     animate(){
-                        var yTranslate = 300 + Math.floor(Math.random()*60 - 30);
-                        var xTranslate = 0 + Math.floor(Math.random()*40 - 20);
-                        var scale = 40 + Math.floor(Math.random()*20 - 10);
+                        if(this.parent.deltaY < 0){
+                            var scaleFactor = 1;
+                        }else{
+                            var scaleFactor = 2;
+                        }
+
+                        
+
+                        var spaceOffset = 1000;
+                        var spaceStart = 20000;
+                        var vacFactor;
+                        
+                        if(this.parent.posY < spaceOffset){
+                            vacFactor = 0;
+                        }else{
+                            vacFactor = Math.min((this.parent.posY - spaceOffset)/spaceStart, 1);
+                        }
+
+                        var yTranslate = Math.floor(this.parent.deltaY*scaleFactor) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
+                        var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
+                        var scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
 
                         var rads = this.parent.rotation*(Math.PI/180) * -1
                         xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
@@ -504,7 +522,7 @@
                         yTranslate = Math.cos(rads)*yTranslate;
 
                         this.element.css({
-                            'background-color': "rgba(136, 136, 136, 0.3)",
+                            'background-color': "rgba(240, 240, 240, 0.5)",
                             transform: 'translate('+xTranslate+'px, '+yTranslate+'px) scale('+scale+')',
                             opacity: 0
                         });
