@@ -1,0 +1,9 @@
+
+name: web-toy
+static_sites:
+- environment_slug: html
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: QuinnRadford/web-toy
+  name: web-toy
