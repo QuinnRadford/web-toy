@@ -1,0 +1,122 @@
+body{
+    height:100%;
+    width:100%;
+    margin:0;
+    padding:40px;
+    box-sizing: border-box;
+    overflow:hidden;
+
+    #canvas{
+        position: relative;
+        height:100%;
+        width:100%;
+        box-sizing: border-box;
+        border:solid 1px black;
+        overflow:hidden;
+        z-index:0;
+
+        .smoke{
+            border-radius: 50%;
+            background-color: rgba(233, 193, 13, 0.628);
+            position:absolute;
+            opacity: 1;
+            transform:scale(1);
+            transition:transform 1s ease-out, opacity 1s ease-out, background-color 0.1s ease-out;
+            height:5px;
+            width:5px;
+            z-index:1;
+        }
+
+        .building{
+            position: absolute;
+            height:256px;
+            width:256px;
+            background: url('../img/building.png');
+            background-size: cover;
+            background-position: bottom center;
+            background-repeat: no-repeat;
+            bottom:0;
+            left:400px;
+            z-index:1;
+        }
+
+
+
+
+
+        .cloud{
+            position: absolute;
+            height:256;
+            width:256;
+            background-size: contain;
+            background-position: bottom center;
+            background-repeat: no-repeat;
+        }
+
+        .cloud1{
+            background-image: url('../img/cloud1.png');
+        }
+        .cloud2{
+            background-image: url('../img/cloud2.png');
+        }
+        .cloud3{
+            background-image: url('../img/cloud3.png');
+        }
+
+        .altitude, .vertical{
+            position: absolute;
+            color:#00ff40;
+            font-size: 28px;
+            width:220px;
+            text-align: right;
+            font-family: sans-serif;
+            font-weight: bold;
+            z-index:1000;
+
+            &::after{
+                color:#00ff40;
+                display:inline-block;
+                font-size: 28px;
+                width: 54px;
+                text-align: left;
+                padding-left: 4px;
+            }
+        }
+
+        .altitude::after{
+            content:"m";
+        }
+        .vertical::after{
+            content:"m/s";
+        }
+
+        .mountains{
+            position: absolute;
+            width:100%;
+            height:100%;
+            background: url('../img/mountains.png');
+            background-size: cover;
+            background-position: bottom center;
+            background-repeat: no-repeat;
+            z-index:1;
+        }
+    }
+
+    #templates{
+        display:none;
+    }
+
+    .player{
+        position:absolute;
+        transition:transform 0.2s ease;
+        z-index:1000;
+        .body{
+            background:100%;
+            width:100px;
+            height:100px;
+            background: url('../img/rocket2.png');
+            background-position: center;
+            background-size: contain;
+        }
+    }
+}

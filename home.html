@@ -1,0 +1,520 @@
+<html>
+    <head>
+        <script src="js/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="css/home.css"/>
+    </head>
+    <body>
+        <div id="canvas">
+            <div class="mountains"></div>
+            <div class="building"></div>
+        </div>
+        <div id="templates">
+            <div class="altitude"></div>
+            <div class="vertical"></div>
+            <div class="cloud"></div>
+            <div class="player">
+                <div class="body">
+
+                </div>
+            </div>
+        </div>
+
+        <script>
+            var keyPress = {};
+            $(document).ready(function(){
+                var $canvas = $('#canvas');
+                var $playerTemplate = $('#templates .player');
+
+                var $mountains = $('#canvas .mountains');
+                var $building = $('#canvas .building');
+
+
+                var player = new Player($canvas, $playerTemplate, $mountains, $building);
+                var allowedKeys = [37, 38, 39, 40];
+
+                $(document).on('keydown', function(e){
+                    var code = e.keyCode || e.which;
+                    if(allowedKeys.includes(code))keyPress[code] = true;
+                    if(!player.playing) window.requestAnimationFrame(function(){player.animatePlayer();});
+                });
+
+                $(document).on('keyup', function(e){
+                    var code = e.keyCode || e.which;
+                    if(keyPress[code]) delete keyPress[code];
+                });
+
+                //render
+                window.requestAnimationFrame(function(){player.animatePlayer();});
+            });
+
+            class Player{
+                    resistance = 0.5;
+                    element;
+                    posX=0;
+                    posY=0;
+                    deltaX=0;
+                    deltaY=0;
+                    playerHeight = 25;
+                    playerWidth = 25;
+                    rotationAngle = 35;
+                    smoke = [];
+                    rotation;
+                    canvasOffset = 0;
+                    left = 0;
+                    bottom = 0;
+                    altitudeElement;
+                    verticalElement;
+                    frameTime = 0;
+                    fpsInterval = 20;
+                    mountains;
+                    clouds = [];
+                    playing = false;
+
+                    constructor($container,  $template, $mountains, $building){
+                        this.playing = true;
+                        this.mountains = $mountains;
+                        this.element = $template.clone();
+                        this.altitudeElement = $template.siblings('.altitude').clone();
+                        this.altitudeElement.appendTo($container);
+
+                        this.verticalElement = $template.siblings('.vertical').clone();
+                        this.verticalElement.appendTo($container);
+
+                        this.building = $building;
+
+                        this.element.appendTo($container);
+                        this.container = $container;
+                        this.canvasHeight = this.container.height();
+                        this.canvasWidth = this.container.width();
+
+                        this.altitudeElement.css('bottom', this.canvasHeight/2);
+                        this.altitudeElement.css('right', 20);
+
+                        this.verticalElement.css('bottom', this.canvasHeight/2 + 40);
+                        this.verticalElement.css('right', 20);
+
+                        this.posX = this.canvasWidth/2;
+                        this.posY = this.canvasHeight/2;
+
+                        this.canvasBoundX = this.canvasWidth - this.playerWidth;
+                        this.canvasBoundY = this.canvasHeight - this.playerHeight;
+
+                        //foreground clouds
+                        for(var i = 0; i < 10; i++){
+                            this.createCloudLayer(this.canvasBoundY*(i+1), 700 + Math.round(Math.random()*500), 5+Math.round(Math.random()*5), 1001, 1);
+                        }
+
+                        //background clouds
+                        for(var i = 1; i < 10; i++){
+                            this.createCloudLayer(this.canvasBoundY*10 + this.canvasBoundY*(i+1), 250 + Math.round(Math.random()*150), Math.round(Math.random()*5), 500, 20);
+                        }
+
+                        //background clouds
+                        for(var i = 1; i < 5; i++){
+                            this.createCloudLayer(this.canvasBoundY*5 + this.canvasBoundY*(i+1), 500 + Math.round(Math.random()*250), Math.round(Math.random()*5), 900, 10);
+                        }
+                        
+                    }
+
+                    createCloudLayer(layerStart, layerSize, qty, zIndex, paralax){
+                        for(var i = 0; i < qty; i++){
+                            this.createRandomCloud(layerStart, layerSize, zIndex, paralax);
+                        }
+                    }
+
+                    createRandomCloud(layerStart, layerSize, zIndex, paralax){
+                        this.clouds.push(new Cloud(this, this.posY + layerStart + ((Math.random()*layerSize) - layerSize/2), this.canvasBoundX*Math.random(),zIndex, paralax));
+                    }
+
+                    updateAltitude(){
+                        var alt = this.posY/10;
+                        alt = Math.round(alt);
+                        this.altitudeElement.html(alt);
+                    }
+
+                    updateVertical(){
+                        var alt = this.deltaY/10;
+                        alt = Math.round(alt);
+                        this.verticalElement.html(alt);
+                    }
+
+                    _gravity(){
+                        if(this.posY >= 0){
+                            this.deltaY -= 5;
+                        }
+                    }
+
+                    positionMountains(){
+                        var paralax = 20;
+                        var paralaxLimit = this.canvasBoundY/2;
+                        if(this.posY > paralaxLimit){
+                            this.mountains.css('bottom', Math.floor((this.posY-paralaxLimit)/paralax)*-1);
+                        }
+                    }
+
+                    positionBuilding(){
+                        var paralax = 1;
+                        var paralaxLimit = this.canvasBoundY/2;
+                        if(this.posY > paralaxLimit && this.posY < paralaxLimit*2){
+                            this.building.css('bottom', Math.floor((this.posY-paralaxLimit)/paralax)*-1);
+                        }
+                    }
+
+                    _positionClouds(){
+                        if(this.clouds.length > 0){
+                            for(var i = 0; i < this.clouds.length; i++){
+                                this.clouds[i].update();
+                            }
+                        }
+                    }
+
+                    _airResistance(){
+                        this._applyFrictionY(0.01, this.resistance);
+                        this._applyFrictionX(0.01, this.resistance);
+                    }
+
+                    animatePlayer(){
+
+                        var now = Date.now();
+                        var elapsed = now - this.frameTime;
+
+                        if (elapsed > this.fpsInterval) {
+                            this.frameTime = now - (elapsed % this.fpsInterval);
+                            var deltaX = 0;
+                            var deltaY = 0;
+                            this.rotation = 0;
+                            var smoke;
+                            if(Object.keys(keyPress).length > 0){
+                                var thrust = false;
+                                for(const code in keyPress){
+                                    switch(code){
+                                        case "37"://left
+                                            deltaX -= 6;
+                                            this.rotation += -1*this.rotationAngle;
+                                            thrust = true;
+                                        break;
+                                        case "38"://up
+                                            deltaY += 10;
+                                            this.rotation += 0;
+                                            if(this.posY <= 0) this.posY = 1;
+                                            thrust = true;
+                                        break;
+                                        case "39"://right
+                                            deltaX += 6;
+                                            this.rotation += 1*this.rotationAngle;
+                                            if(this.posX <= 0) this.posX = 1;
+                                            thrust = true;
+                                        break;
+                                        case "40"://down
+                                            //deltaY -= 10;
+                                        break;
+                                    }
+                                }
+
+                                if(thrust){
+                                    smoke = new Smoke(this);
+                                    this.smoke.push(smoke);
+                                }
+                                
+                            }
+
+                            for(var i = 0; i < this.smoke.length; i++){
+                                var smoke2 = [];
+                                if(this.smoke[i].visible){
+                                    smoke2.push(this.smoke[i]);
+                                }
+                                this.smoke = smoke2;
+                            }
+
+                            
+
+                            this.element.css('transform', 'rotate('+this.rotation+'deg)');
+
+                            
+                            this.deltaX += deltaX
+                            this.deltaY += deltaY
+
+                            this._gravity();
+                            this._airResistance();
+                            this._friction();
+
+
+                            if(Math.abs(this.deltaY) < 0.2){
+                                this.deltaY = 0;
+                            }
+                            if(Math.abs(this.deltaX) < 0.2){
+                                this.deltaX = 0;
+                            }
+                            this._translatePlayer();
+                            this.draw();
+                            this._calculateBounce();
+
+                            this.deltaX = this._roundVelocity(this.deltaX);
+                            this.deltaY = this._roundVelocity(this.deltaY);
+                        }
+                        var self = this;
+
+                        if(this.posY == 0 && Math.abs(this.deltaY) == 0 && Math.abs(this.deltaX) == 0){
+                            this.playing = false;
+                        }else{
+                            window.requestAnimationFrame(function(){
+                                self.animatePlayer();
+                            });
+                        }
+
+                    }
+
+                    _skyColour(){
+                        var red = 58;
+                        var green =198;
+                        var blue = 255;
+                        var alpha = 0.7;
+
+                        var spaceOffset = 1000;
+                        var spaceStart = 20000;
+
+                        var offsetPos = this.posY - spaceOffset;
+
+                        if(offsetPos > spaceStart ){
+                            var spacePercent = 1;
+                        }else if(offsetPos < 0 ){
+                            var spacePercent = 0;
+                        }else{
+                            var spacePercent = this.posY > spaceStart ? 1 : this.posY/spaceStart;
+                        }
+                        this.container.css('background-color', 'rgba('+(red - Math.floor(red*spacePercent))+','+(green - Math.floor(green*spacePercent))+','+(blue - Math.floor(blue*spacePercent))+','+(alpha + (alpha)*spacePercent)+' )')
+                        
+                    }
+
+                    _translatePlayer(){
+                        var scalingFactor = 0.05;
+                        var finalY = this._roundVelocity(this.posY + (scalingFactor*this.deltaY));
+                        var finalX = this._roundVelocity(this.posX + (scalingFactor*this.deltaX));
+
+                        if(finalY < 0) finalY = 0;
+                        if(finalX < 0) finalX = 0;
+                        if(finalY < 1) finalY = Math.round(finalY);
+                        if(finalX < 1) finalX = Math.round(finalX);
+                        if(finalX > this.canvasBoundX) finalX = this.canvasBoundX;
+
+                        this.posX = finalX;
+                        this.posY = finalY;
+                    }
+
+                    draw(){
+                        this.left = this.posX;
+                        this.bottom = this.posY - this.canvasOffset;
+
+                        var vLimit = this.canvasBoundY - 50;
+                        var vFloor = 50;
+
+                        var vHalf = this.canvasBoundY/2;
+
+                        if(this.bottom > vLimit){
+                            var offset = this.bottom - vLimit
+                            this.canvasOffset += offset;
+                            this.bottom -= offset;
+                        }else if(this.bottom < vFloor && this.canvasOffset > 0){
+                            var offset = this.bottom - vFloor
+                            this.canvasOffset += offset;
+                            this.bottom -= offset;
+                        }else if(this.bottom > vHalf && this.bottom < vLimit){
+                            var percentage = (this.bottom - vHalf) / vHalf;
+                            var offset = Math.floor((this.bottom - vHalf)*percentage);
+                            this.canvasOffset += offset;
+                            this.bottom -= offset;
+                        }else if(this.bottom < vHalf && this.bottom > vFloor && this.canvasOffset > 0){
+                            var percentage = Math.abs((this.bottom - vHalf) / vHalf);
+                            var offset = Math.floor((this.bottom - vHalf)*percentage);
+                            this.canvasOffset += offset;
+                            this.bottom -= offset;
+                        }
+                        this.positionMountains();
+                        this.positionBuilding();
+                        this._skyColour();
+                        this._positionClouds();
+                        this.updateAltitude();
+                        this.updateVertical();
+
+                        this.element.css({
+                            bottom: this.bottom+"px",
+                            left: this.left+"px"
+                        });
+                    }
+
+                    _calculateBounce(){
+                        if(this.posY <= 0){
+                            this.deltaY = -1*this.deltaY*0.9;
+                        }
+
+                        if(this.posX >= this.canvasBoundX || this.posX <= 0){
+                            this.deltaX = -1*this.deltaX*0.9;
+                        }
+                    }
+
+                    _roundVelocity(vel){
+                        return Math.round((vel + Number.EPSILON) * 100) / 100;
+                    }
+
+                    _friction(){
+                        if(this.posY <= 0){
+                            this._applyFrictionX(0.01, this.resistance*4);
+                        }
+                    }
+
+                    _applyFrictionX(factor, amount){
+                        var absDeltaX = Math.abs(this.deltaX);
+                        if(absDeltaX > 0){
+                            var nextDeltaX = absDeltaX - ((absDeltaX*factor) + amount);
+                            this.deltaX = nextDeltaX > 0 ? nextDeltaX*Math.sign(this.deltaX) : 0;
+                        }
+                    }
+
+                    _applyFrictionY(factor, amount){
+                        var absDeltaY = Math.abs(this.deltaY);
+                        if(absDeltaY > 0){
+                            var nextDeltaY = absDeltaY - ((absDeltaY*factor) + amount);
+                            this.deltaY = nextDeltaY > 0 ? nextDeltaY*Math.sign(this.deltaY) : 0;
+                        }
+                    }
+                    
+                }
+
+                class Cloud{
+                    element;
+                    parent;
+                    posY;
+                    container;
+                    visible = false;
+                    cloudType;
+                    scale;
+                    opacity;
+                    rotation;
+
+                    constructor($parent, posY, posX, zIndex, paralax){
+                        this.parent = $parent;
+                        this.container = this.parent.element.parent();
+                        this.posY = posY;
+                        this.posX = posX;
+                        this.zIndex = zIndex;
+
+                        this.cloudType = Math.round(Math.random()*3);
+                        this.scale = 0.7 + Math.random();
+                        this.opacity = 0.5 + Math.random();
+                        this.rotation = (Math.random()*1) - 0.5;
+                        this.paralax = paralax;
+                    }
+
+                    draw(){
+                        if(!this.visible){
+                            if(this.element){
+                                this.element.appendTo(this.container);
+                                this.visible = true;
+                            }else{
+                                this.element = $('<div></div>');
+                                this.element.addClass('cloud');
+                                this.element.addClass('cloud'+this.cloudType);
+                                this.element.css('transform', 'scale('+this.scale+') rotate('+this.rotation+'rad)');
+                                this.element.css('opacity', this.opacity);
+                                this.element.css('opacity', this.opacity);
+                                this.element.css('z-index', this.zIndex);
+                                this.element.css('left', this.posX);
+                                this.element.css('bottom', Math.floor(this.posY - this.parent.canvasOffset)+"px");
+                                this.element.appendTo(this.container);
+                                this.visible = true;
+                            }
+                            
+                        }
+
+                    }
+
+                    _checkVisible(){
+                        var buffer = 500;
+                        var canvasPosition = (this.posY - this.parent.canvasOffset)/this.paralax;
+                        if(canvasPosition >= buffer*-1 && canvasPosition < this.parent.canvasBoundY+buffer){
+                            this.draw();
+                        }else{
+                            this.remove();
+                        }
+                    }
+
+                    update(){
+                        this._checkVisible();
+                        if(this.visible){
+                            var paralaxLimit =0;
+                            if(this.parent.posY > paralaxLimit){
+                                var canvasPosition = this.posY-this.parent.canvasOffset;
+                                this.element.css('bottom', Math.floor((canvasPosition-paralaxLimit)/this.paralax)+"px");
+                            }
+                        }
+                    }
+
+                    remove(){
+                        if(this.element) this.element.detach();
+                        this.visible = false;
+                    }
+
+                    destroy(){
+                        if(this.element) this.element.remove();
+                        this.visible = false;
+                    }
+                }
+
+                class Smoke{
+                    element;
+                    parent;
+                    visible = true;
+
+                    constructor($parent){
+                        this.parent = $parent;
+                        this.element = $('<div></div>');
+                        this.element.addClass('smoke');
+                        var left = this.parent.left + 48;
+                        var bottom = this.parent.bottom;
+
+                        if(this.parent.rotation !== 0){
+                            var rads = this.parent.rotation*(Math.PI/180)
+
+                            left = this.parent.left + 48 - (Math.sin(rads) * (this.parent.element.height()/2));
+                            bottom = this.parent.bottom + 48 - (Math.cos(rads) * (this.parent.element.height()/2));
+                        }
+
+                        this.element.css('bottom', bottom);
+                        this.element.css('left', left);
+                        this.element.appendTo(this.parent.element.parent());
+                        
+                        var self = this;
+                        window.setTimeout(function(){ self.destroy(); }, 3000);
+                        window.setTimeout(function(){ self.animate(); }, 1);
+                    }
+
+                    animate(){
+                        var yTranslate = 300 + Math.floor(Math.random()*60 - 30);
+                        var xTranslate = 0 + Math.floor(Math.random()*40 - 20);
+                        var scale = 40 + Math.floor(Math.random()*20 - 10);
+
+                        var rads = this.parent.rotation*(Math.PI/180) * -1
+                        xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
+
+                        yTranslate = Math.cos(rads)*yTranslate;
+
+                        this.element.css({
+                            'background-color': "rgba(136, 136, 136, 0.3)",
+                            transform: 'translate('+xTranslate+'px, '+yTranslate+'px) scale('+scale+')',
+                            opacity: 0
+                        });
+
+                        
+                    }
+
+                    destroy(){
+                        this.visible = false;
+                        if(this.element) this.element.remove();
+                    }
+                }
+
+
+
+        </script>
+    </body>
+</html>
