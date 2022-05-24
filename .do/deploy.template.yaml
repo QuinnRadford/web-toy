@@ -1,0 +1,9 @@
+
+spec:
+  name: web-toy
+  static_sites:
+  - environment_slug: html
+    git:
+      branch: main
+      repo_clone_url: https://github.com/QuinnRadford/web-toy.git
+    name: web-toy
