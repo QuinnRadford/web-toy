@@ -54,8 +54,8 @@ body #canvas .building {
 
 body #canvas .cloud {
   position: absolute;
-  height: 256;
-  width: 256;
+  height: 256px;
+  width: 256px;
   background-size: contain;
   background-position: bottom center;
   background-repeat: no-repeat;
