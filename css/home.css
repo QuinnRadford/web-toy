@@ -23,6 +23,17 @@ body #canvas {
   z-index: 0;
 }
 
+body #canvas .space {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1000%;
+  width: 100%;
+  opacity: 0;
+  background: url("../img/seamless_space.png");
+  background-blend-mode: screen;
+}
+
 body #canvas .smoke {
   border-radius: 50%;
   background-color: rgba(255, 244, 88, 0.7);

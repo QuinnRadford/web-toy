@@ -10,6 +10,7 @@
     </head>
     <body>
         <div id="canvas">
+            <div class="space"></div>
             <div class="mountains"></div>
             <div class="building"></div>
         </div>
@@ -32,9 +33,10 @@
 
                 var $mountains = $('#canvas .mountains');
                 var $building = $('#canvas .building');
+                var $space = $('#canvas .space');
 
 
-                var player = new Player($canvas, $playerTemplate, $mountains, $building);
+                var player = new Player($canvas, $playerTemplate, $mountains, $building, $space);
                 var allowedKeys = [37, 38, 39, 40];
 
                 $(document).on('keydown', function(e){
@@ -74,9 +76,11 @@
                     mountains;
                     clouds = [];
                     playing = false;
+                    space;
 
-                    constructor($container,  $template, $mountains, $building){
+                    constructor($container,  $template, $mountains, $building, $space){
                         this.playing = true;
+                        this.space = $space;
                         this.mountains = $mountains;
                         this.element = $template.clone();
                         this.altitudeElement = $template.siblings('.altitude').clone();
@@ -154,6 +158,14 @@
                         var paralaxLimit = this.canvasBoundY/2;
                         if(this.posY > paralaxLimit){
                             this.mountains.css('bottom', Math.floor((this.posY-paralaxLimit)/paralax)*-1);
+                        }
+                    }
+
+                    positionSpace(){
+                        var paralax = 80;
+                        var paralaxLimit = this.canvasBoundY/2;
+                        if(this.posY > paralaxLimit){
+                            this.space.css('bottom', Math.floor((this.posY-paralaxLimit)/paralax)*-1);
                         }
                     }
 
@@ -287,6 +299,8 @@
                         }else{
                             var spacePercent = this.posY > spaceStart ? 1 : this.posY/spaceStart;
                         }
+
+                        this.space.css('opacity', spacePercent/2);
                         this.container.css('background-color', 'rgba('+(red - Math.floor(red*spacePercent))+','+(green - Math.floor(green*spacePercent))+','+(blue - Math.floor(blue*spacePercent))+','+(alpha + (alpha)*spacePercent)+' )')
                         
                     }
@@ -335,6 +349,7 @@
                             this.bottom -= offset;
                         }
                         this.positionMountains();
+                        this.positionSpace();
                         this.positionBuilding();
                         this._skyColour();
                         this._positionClouds();
