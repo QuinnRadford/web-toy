@@ -13,6 +13,7 @@
             <div class="space"></div>
             <div class="mountains"></div>
             <div class="building"></div>
+            <div class="instructions"></div>
         </div>
         <div id="templates">
             <div class="altitude"></div>
@@ -31,12 +32,7 @@
                 var $canvas = $('#canvas');
                 var $playerTemplate = $('#templates .player');
 
-                var $mountains = $('#canvas .mountains');
-                var $building = $('#canvas .building');
-                var $space = $('#canvas .space');
-
-
-                var player = new Player($canvas, $playerTemplate, $mountains, $building, $space);
+                var player = new Player($canvas, $playerTemplate);
                 var allowedKeys = [37, 38, 39, 40];
 
                 $(document).on('keydown', function(e){
@@ -79,11 +75,12 @@
                     space;
                     spaceStart = 20000;
                     spaceOffset = 3000;
+                    instructions;
 
-                    constructor($container,  $template, $mountains, $building, $space){
+                    constructor($container,  $template){
                         this.playing = true;
-                        this.space = $space;
-                        this.mountains = $mountains;
+                        this.space = $container.children('.space');
+                        this.mountains = $container.children('.mountains');
                         this.element = $template.clone();
                         this.altitudeElement = $template.siblings('.altitude').clone();
                         this.altitudeElement.appendTo($container);
@@ -91,7 +88,8 @@
                         this.verticalElement = $template.siblings('.vertical').clone();
                         this.verticalElement.appendTo($container);
 
-                        this.building = $building;
+                        this.building = $container.children('.building');
+                        this.instructions = $container.children('.instructions');
 
                         this.element.appendTo($container);
                         this.container = $container;
@@ -137,16 +135,20 @@
                         this.clouds.push(new Cloud(this, this.posY + layerStart + ((Math.random()*layerSize) - layerSize/2), this.canvasBoundX*Math.random(),zIndex, paralax));
                     }
 
-                    updateAltitude(){
+                    _updateAltitude(){
                         var alt = this.posY/10;
                         alt = Math.round(alt);
                         this.altitudeElement.html(alt);
                     }
 
-                    updateVertical(){
+                    _updateVertical(){
                         var alt = this.deltaY/10;
                         alt = Math.round(alt);
                         this.verticalElement.html(alt);
+                    }
+
+                    updateInstructions(){
+
                     }
 
                     _gravity(){
@@ -155,7 +157,14 @@
                         }
                     }
 
-                    positionMountains(){
+                    _updateInstructions(){
+                        var instructionsLimit = 2000;
+                        if(this.posY < instructionsLimit){
+                            this.instructions.css('opacity', 1 - this.posY/instructionsLimit );
+                        }
+                    }
+
+                    _positionMountains(){
                         var paralax = 20;
                         var paralaxLimit = this.canvasBoundY/2;
                         if(this.posY > paralaxLimit){
@@ -163,7 +172,7 @@
                         }
                     }
 
-                    positionSpace(){
+                    _positionSpace(){
                         var paralax = 80;
                         var paralaxLimit = this.canvasBoundY/2;
                         if(this.posY > paralaxLimit){
@@ -171,7 +180,7 @@
                         }
                     }
 
-                    positionBuilding(){
+                    _positionBuilding(){
                         var paralax = 1;
                         var paralaxLimit = this.canvasBoundY/2;
                         if(this.posY > paralaxLimit && this.posY < paralaxLimit*2){
@@ -347,13 +356,14 @@
                             this.canvasOffset += offset;
                             this.bottom -= offset;
                         }
-                        this.positionMountains();
-                        this.positionSpace();
-                        this.positionBuilding();
+                        this._positionMountains();
+                        this._positionSpace();
+                        this._positionBuilding();
                         this._skyColour();
                         this._positionClouds();
-                        this.updateAltitude();
-                        this.updateVertical();
+                        this._updateAltitude();
+                        this._updateVertical();
+                        this._updateInstructions();
 
                         this.element.css({
                             bottom: this.bottom+"px",
