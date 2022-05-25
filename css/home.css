@@ -23,6 +23,68 @@ body #canvas {
   z-index: 0;
 }
 
+body #canvas .controller {
+  position: absolute;
+  height: 169px;
+  width: 256px;
+  z-index: 2000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  gap: 4px;
+  bottom: 40px;
+  right: 40px;
+}
+
+body #canvas .controller div {
+  height: calc(50% - 3px);
+  -ms-flex-preferred-size: calc(33.33% - 3px);
+      flex-basis: calc(33.33% - 3px);
+  border-radius: 8px;
+}
+
+body #canvas .controller .button {
+  outline: 6px solid #d1d1d1;
+  outline-offset: -6px;
+  opacity: 0.8;
+}
+
+body #canvas .controller .button::after {
+  display: block;
+  content: "";
+  height: 100%;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  -webkit-filter: invert(1);
+          filter: invert(1);
+}
+
+body #canvas .controller .active {
+  outline: 6px solid white;
+}
+
+body #canvas .controller .up::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(0);
+          transform: rotate(0);
+}
+
+body #canvas .controller .left::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(-90deg);
+          transform: rotate(-90deg);
+}
+
+body #canvas .controller .right::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+
 body #canvas .space {
   position: absolute;
   bottom: 0;
@@ -63,20 +125,6 @@ body #canvas .building {
   z-index: 1;
 }
 
-body #canvas .instructions {
-  position: absolute;
-  height: 256px;
-  width: 256px;
-  background: url("../img/instructions.png");
-  background-size: cover;
-  background-position: bottom center;
-  background-repeat: no-repeat;
-  bottom: 0;
-  right: 40px;
-  z-index: 1;
-  opacity: 0.8;
-}
-
 body #canvas .cloud {
   position: absolute;
   height: 256px;
@@ -106,7 +154,7 @@ body #canvas .altitude, body #canvas .vertical {
   text-align: right;
   font-family: sans-serif;
   font-weight: bold;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 body #canvas .altitude::after, body #canvas .vertical::after {

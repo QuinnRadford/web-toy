@@ -13,7 +13,14 @@
             <div class="space"></div>
             <div class="mountains"></div>
             <div class="building"></div>
-            <div class="instructions"></div>
+            <div class="controller">
+                <div></div>
+                <div class="button active up" data-btn="up"></div>
+                <div></div>
+                <div class="button active left" data-btn="left"></div>
+                <div class="button"></div>
+                <div class="button active right" data-btn="right"></div>
+            </div>
         </div>
         <div id="templates">
             <div class="altitude"></div>
@@ -28,23 +35,63 @@
 
         <script>
             var keyPress = {};
-            $(document).ready(function(){
-                var $canvas = $('#canvas');
-                var $playerTemplate = $('#templates .player');
+            var allowedKeys = [37, 38, 39, 40];
+            var $controls,$canvas,$playerTemplate,player;
+            var isMobileDevice = false;
 
-                var player = new Player($canvas, $playerTemplate);
-                var allowedKeys = [37, 38, 39, 40];
+            $(document).ready(function(){
+                $canvas = $('#canvas');
+                $playerTemplate = $('#templates .player');
+
+                $controls = $('.controller');
+
+                player = new Player($canvas, $playerTemplate);
+                
+
+                if(isTouchDevice()){
+                    isMobileDevice = true;
+                    $controls.on('touchstart', '.active', function(){
+                        useControl($(this).data("btn"), true);
+                    });
+                    $controls.on('touchend', '.active', function(){
+                        useControl($(this).data("btn"), false);
+                    });
+                }else{
+                    $controls.on('mousedown', '.active', function(){
+                        player.alwaysShowControls = true;
+                        useControl($(this).data("btn"), true);
+                    });
+                    $controls.on('mouseup', '.active', function(){
+                        useControl($(this).data("btn"), false);
+                    });
+                }
+
+                if(isMobileDevice){
+                    player.alwaysShowControls = true;
+                    resizeControls();
+                }
 
                 $(document).on('keydown', function(e){
                     var code = e.keyCode || e.which;
-                    if(allowedKeys.includes(code))keyPress[code] = true;
-                    if(!player.playing) window.requestAnimationFrame(function(){player.animatePlayer();});
+                    pressButton(code);
                 });
 
                 $(document).on('keyup', function(e){
                     var code = e.keyCode || e.which;
-                    if(keyPress[code]) delete keyPress[code];
+                    unpressButton(code);
                 });
+
+                window.onresize = function(){
+                    player.resizeCanvas();
+                    if(isMobileDevice){
+                        resizeControls();
+                    }
+                    
+                }
+
+                function resizeControls(){
+                    $controls.css('right', Math.floor(($canvas.width() - $controls.width())/2));
+                }
 
                 //render
                 window.requestAnimationFrame(function(){player.animatePlayer();});
@@ -75,7 +122,13 @@
                     space;
                     spaceStart = 20000;
                     spaceOffset = 3000;
-                    instructions;
+                    controllerPad;
+                    alwaysShowControls = false;
+
+                    canvasWidth;
+                    canvasHeight;
+                    canvasBoundX;
+                    canvasBoundY;
 
                     constructor($container,  $template){
                         this.playing = true;
@@ -89,24 +142,20 @@
                         this.verticalElement.appendTo($container);
 
                         this.building = $container.children('.building');
-                        this.instructions = $container.children('.instructions');
+                        this.controllerPad = $container.children('.controller');
 
                         this.element.appendTo($container);
                         this.container = $container;
-                        this.canvasHeight = this.container.height();
-                        this.canvasWidth = this.container.width();
 
-                        this.altitudeElement.css('bottom', this.canvasHeight/2);
-                        this.altitudeElement.css('right', 20);
-
-                        this.verticalElement.css('bottom', this.canvasHeight/2 + 40);
-                        this.verticalElement.css('right', 20);
+                        this.resizeCanvas();
 
                         this.posX = this.canvasWidth/2;
                         this.posY = this.canvasHeight/2;
 
-                        this.canvasBoundX = this.canvasWidth - this.playerWidth;
-                        this.canvasBoundY = this.canvasHeight - this.playerHeight;
+                        this.altitudeElement.css('top', 20);
+                        this.altitudeElement.css('right', 0);
+                        this.verticalElement.css('top', 60);
+                        this.verticalElement.css('right', 0);
 
                         //foreground clouds
                         for(var i = 0; i < 10; i++){
@@ -125,6 +174,27 @@
                         
                     }
 
+                    resizeCanvas(){
+                        if(this.container.width() <= 480){
+                            this.container.css({
+                                height:"150%",
+                                width:"150%",
+                                transform:"scale(0.667) translate(-25%, -25%)"
+                            });
+                        }else{
+                            this.container.css({
+                                height:"100%",
+                                width:"100%",
+                                transform:""
+                            });
+                        }
+                        this.canvasHeight = this.container.height();
+                        this.canvasWidth = this.container.width();
+                        this.canvasBoundX = this.canvasWidth - this.playerWidth;
+                        this.canvasBoundY = this.canvasHeight - this.playerHeight;
+                        this.building.css('left', Math.floor(this.canvasWidth*0.2) - 150 )
+                    }
+
                     createCloudLayer(layerStart, layerSize, qty, zIndex, paralax){
                         for(var i = 0; i < qty; i++){
                             this.createRandomCloud(layerStart, layerSize, zIndex, paralax);
@@ -132,7 +202,8 @@
                     }
 
                     createRandomCloud(layerStart, layerSize, zIndex, paralax){
-                        this.clouds.push(new Cloud(this, this.posY + layerStart + ((Math.random()*layerSize) - layerSize/2), this.canvasBoundX*Math.random(),zIndex, paralax));
+                        var cloudMargins = Math.floor(this.canvasWidth*0.2);
+                        this.clouds.push(new Cloud(this, this.posY + layerStart + ((Math.random()*layerSize) - layerSize/2), (this.canvasWidth + cloudMargins)*Math.random() - cloudMargins, zIndex, paralax));
                     }
 
                     _updateAltitude(){
@@ -147,7 +218,7 @@
                         this.verticalElement.html(alt);
                     }
 
-                    updateInstructions(){
+                    updatecontrollerPad(){
 
                     }
 
@@ -157,10 +228,14 @@
                         }
                     }
 
-                    _updateInstructions(){
-                        var instructionsLimit = 2000;
-                        if(this.posY < instructionsLimit){
-                            this.instructions.css('opacity', 1 - this.posY/instructionsLimit );
+                    _updatecontrollerPad(){
+                        if(!this.alwaysShowControls){
+                            var controllerPadLimit = 2000;
+                            if(this.posY < controllerPadLimit){
+                                this.controllerPad.css('opacity', 1 - this.posY/controllerPadLimit );
+                            }
+                        }else{
+                            this.controllerPad.css('opacity', 1 );
                         }
                     }
 
@@ -367,7 +442,7 @@
                         this._positionClouds();
                         this._updateAltitude();
                         this._updateVertical();
-                        this._updateInstructions();
+                        this._updatecontrollerPad();
 
                         this.element.css({
                             bottom: this.bottom+"px",
@@ -413,156 +488,187 @@
                     
                 }
 
-                class Cloud{
-                    element;
-                    parent;
-                    posY;
-                    container;
-                    visible = false;
-                    cloudType;
-                    scale;
-                    opacity;
-                    rotation;
+            class Cloud{
+                element;
+                parent;
+                posY;
+                container;
+                visible = false;
+                cloudType;
+                scale;
+                opacity;
+                rotation;
 
-                    constructor($parent, posY, posX, zIndex, paralax){
-                        this.parent = $parent;
-                        this.container = this.parent.element.parent();
-                        this.posY = posY;
-                        this.posX = posX;
-                        this.zIndex = zIndex;
+                constructor($parent, posY, posX, zIndex, paralax){
+                    this.parent = $parent;
+                    this.container = this.parent.element.parent();
+                    this.posY = posY;
+                    this.posX = posX;
+                    this.zIndex = zIndex;
 
-                        this.cloudType = Math.round(Math.random()*3);
-                        this.scale = 0.7 + Math.random();
-                        this.opacity = 0.5 + Math.random();
-                        this.rotation = (Math.random()*1) - 0.5;
-                        this.paralax = paralax;
-                    }
+                    this.cloudType = Math.round(Math.random()*3);
+                    this.scale = 0.7 + Math.random();
+                    this.opacity = 0.5 + Math.random();
+                    this.rotation = (Math.random()*1) - 0.5;
+                    this.paralax = paralax;
+                }
 
-                    draw(){
-                        if(!this.visible){
-                            if(this.element){
-                                this.element.appendTo(this.container);
-                                this.visible = true;
-                            }else{
-                                this.element = $('<div></div>');
-                                this.element.addClass('cloud');
-                                this.element.addClass('cloud'+this.cloudType);
-                                this.element.css('transform', 'scale('+this.scale+') rotate('+this.rotation+'rad)');
-                                this.element.css('opacity', this.opacity);
-                                this.element.css('opacity', this.opacity);
-                                this.element.css('z-index', this.zIndex);
-                                this.element.css('left', this.posX);
-                                this.element.css('bottom', Math.floor(this.posY - this.parent.canvasOffset)+"px");
-                                this.element.appendTo(this.container);
-                                this.visible = true;
-                            }
-                            
-                        }
-
-                    }
-
-                    _checkVisible(){
-                        var buffer = 500;
-                        var canvasPosition = (this.posY - this.parent.canvasOffset)/this.paralax;
-                        if(canvasPosition >= buffer*-1 && canvasPosition < this.parent.canvasBoundY+buffer){
-                            this.draw();
+                draw(){
+                    if(!this.visible){
+                        if(this.element){
+                            this.element.appendTo(this.container);
+                            this.visible = true;
                         }else{
-                            this.remove();
+                            this.element = $('<div></div>');
+                            this.element.addClass('cloud');
+                            this.element.addClass('cloud'+this.cloudType);
+                            this.element.css('transform', 'scale('+this.scale+') rotate('+this.rotation+'rad)');
+                            this.element.css('opacity', this.opacity);
+                            this.element.css('opacity', this.opacity);
+                            this.element.css('z-index', this.zIndex);
+                            this.element.css('left', this.posX);
+                            this.element.css('bottom', Math.floor(this.posY - this.parent.canvasOffset)+"px");
+                            this.element.appendTo(this.container);
+                            this.visible = true;
                         }
+                        
                     }
 
-                    update(){
-                        this._checkVisible();
-                        if(this.visible){
-                            var paralaxLimit =0;
-                            if(this.parent.posY > paralaxLimit){
-                                var canvasPosition = this.posY-this.parent.canvasOffset;
-                                this.element.css('bottom', Math.floor((canvasPosition-paralaxLimit)/this.paralax)+"px");
-                            }
-                        }
-                    }
+                }
 
-                    remove(){
-                        if(this.element) this.element.detach();
-                        this.visible = false;
-                    }
-
-                    destroy(){
-                        if(this.element) this.element.remove();
-                        this.visible = false;
+                _checkVisible(){
+                    var buffer = 500;
+                    var canvasPosition = (this.posY - this.parent.canvasOffset)/this.paralax;
+                    if(canvasPosition >= buffer*-1 && canvasPosition < this.parent.canvasBoundY+buffer){
+                        this.draw();
+                    }else{
+                        this.remove();
                     }
                 }
 
-                class Smoke{
-                    element;
-                    parent;
-                    visible = true;
-
-                    constructor($parent){
-                        this.parent = $parent;
-                        this.element = $('<div></div>');
-                        this.element.addClass('smoke');
-                        var left = this.parent.left + 48;
-                        var bottom = this.parent.bottom;
-
-                        if(this.parent.rotation !== 0){
-                            var rads = this.parent.rotation*(Math.PI/180)
-
-                            left = this.parent.left + 48 - (Math.sin(rads) * (this.parent.element.height()/2));
-                            bottom = this.parent.bottom + 48 - (Math.cos(rads) * (this.parent.element.height()/2));
+                update(){
+                    this._checkVisible();
+                    if(this.visible){
+                        var paralaxLimit =0;
+                        if(this.parent.posY > paralaxLimit){
+                            var canvasPosition = this.posY-this.parent.canvasOffset;
+                            this.element.css('bottom', Math.floor((canvasPosition-paralaxLimit)/this.paralax)+"px");
                         }
-
-                        this.element.css('bottom', bottom);
-                        this.element.css('left', left);
-                        this.element.appendTo(this.parent.element.parent());
-                        
-                        var self = this;
-                        window.setTimeout(function(){ self.destroy(); }, 4000);
-                        window.setTimeout(function(){ self.animate(); }, 1);
-                    }
-
-                    animate(){
-                        if(this.parent.deltaY < 0){
-                            var scaleFactor = 0.5;
-                        }else{
-                            var scaleFactor = 2;
-                        }
-
-                        
-
-                        var vacFactor;
-                        
-                        if(this.parent.posY < this.parent.spaceOffset){
-                            vacFactor = 0;
-                        }else{
-                            vacFactor = Math.min((this.parent.posY - this.parent.spaceOffset)/this.parent.spaceStart, 1);
-                        }
-
-                        var yTranslate = Math.min(Math.floor(this.parent.deltaY*scaleFactor), 1600) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
-                        var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
-                        var scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
-
-                        var rads = this.parent.rotation*(Math.PI/180) * -1
-                        xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
-
-                        yTranslate = Math.cos(rads)*yTranslate;
-
-                        this.element.css({
-                            'background-color': "rgba(240, 240, 240, 0.5)",
-                            transform: 'translate('+xTranslate+'px, '+yTranslate+'px) scale('+scale+')',
-                            opacity: 0
-                        });
-
-                        
-                    }
-
-                    destroy(){
-                        this.visible = false;
-                        if(this.element) this.element.remove();
                     }
                 }
 
+                remove(){
+                    if(this.element) this.element.detach();
+                    this.visible = false;
+                }
 
+                destroy(){
+                    if(this.element) this.element.remove();
+                    this.visible = false;
+                }
+            }
+
+            class Smoke{
+                element;
+                parent;
+                visible = true;
+
+                constructor($parent){
+                    this.parent = $parent;
+                    this.element = $('<div></div>');
+                    this.element.addClass('smoke');
+                    var left = this.parent.left + 48;
+                    var bottom = this.parent.bottom;
+
+                    if(this.parent.rotation !== 0){
+                        var rads = this.parent.rotation*(Math.PI/180)
+
+                        left = this.parent.left + 48 - (Math.sin(rads) * (this.parent.element.height()/2));
+                        bottom = this.parent.bottom + 48 - (Math.cos(rads) * (this.parent.element.height()/2));
+                    }
+
+                    this.element.css('bottom', bottom);
+                    this.element.css('left', left);
+                    this.element.appendTo(this.parent.element.parent());
+                    
+                    var self = this;
+                    window.setTimeout(function(){ self.destroy(); }, 4000);
+                    window.setTimeout(function(){ self.animate(); }, 1);
+                }
+
+                animate(){
+                    if(this.parent.deltaY < 0){
+                        var scaleFactor = 0.5;
+                    }else{
+                        var scaleFactor = 2;
+                    }
+
+                    
+
+                    var vacFactor;
+                    
+                    if(this.parent.posY < this.parent.spaceOffset){
+                        vacFactor = 0;
+                    }else{
+                        vacFactor = Math.min((this.parent.posY - this.parent.spaceOffset)/this.parent.spaceStart, 1);
+                    }
+
+                    var yTranslate = Math.min(Math.floor(this.parent.deltaY*scaleFactor), 1600) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
+                    var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
+                    var scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
+
+                    var rads = this.parent.rotation*(Math.PI/180) * -1
+                    xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
+
+                    yTranslate = Math.cos(rads)*yTranslate;
+
+                    this.element.css({
+                        'background-color': "rgba(240, 240, 240, 0.5)",
+                        transform: 'translate('+xTranslate+'px, '+yTranslate+'px) scale('+scale+')',
+                        opacity: 0
+                    });
+
+                    
+                }
+
+                destroy(){
+                    this.visible = false;
+                    if(this.element) this.element.remove();
+                }
+            }
+
+            function isTouchDevice() {
+                return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
+            }
+
+            function useControl(button, active){
+                    var code;
+                    switch(button){
+                        case "up":
+                            code = 38;
+                        break;
+                        case "left":
+                            code = 37;
+                        break;
+                        case "right":
+                            code = 39;
+                        break;
+                    }
+                    if(active && code){
+                        pressButton(code);
+                    }else{
+                        unpressButton(code);
+                    }
+                }
+
+                function pressButton(code){
+                    if(allowedKeys.includes(code))keyPress[code] = true;
+                    if(!player.playing) window.requestAnimationFrame(function(){player.animatePlayer();});
+                }
+
+                function unpressButton(code){
+                    if(keyPress[code]) delete keyPress[code];
+                }
 
         </script>
     </body>

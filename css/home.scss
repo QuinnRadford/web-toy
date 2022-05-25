@@ -17,6 +17,59 @@ body{
         border:solid 1px black;
         overflow:hidden;
         z-index:0;
+
+
+        .controller{
+            position: absolute;
+            height:169px;
+            width:256px;
+            z-index: 2000;
+
+            display:flex;
+            flex-wrap: wrap;
+            gap:4px;
+
+            bottom:40px;
+            right:40px;
+
+            div{
+                height:calc(50% - 3px);
+                flex-basis:calc(33.33% - 3px);
+                border-radius: 8px;
+            }
+
+            .button{
+                outline: 6px solid #d1d1d1;
+                outline-offset: -6px;
+                opacity:0.8;
+                &::after{
+                    display:block;
+                    content:"";
+                    height:100%;
+                    width:100%;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    background-size: contain;
+                    filter:invert(1);
+                }
+            }
+            .active{
+                outline: 6px solid white;
+            }
+
+            .up::after{
+                background-image:url('../img/arrow.svg');
+                transform:rotate(0);
+            }
+            .left::after{
+                background-image:url('../img/arrow.svg');
+                transform:rotate(-90deg);
+            }
+            .right::after{
+                background-image:url('../img/arrow.svg');
+                transform:rotate( 90deg);
+            }
+        }
         
 
         .space{
@@ -55,23 +108,6 @@ body{
             z-index:1;
         }
 
-        .instructions{
-            position: absolute;
-            height:256px;
-            width:256px;
-            background: url('../img/instructions.png');
-            background-size: cover;
-            background-position: bottom center;
-            background-repeat: no-repeat;
-            bottom:0;
-            right:40px;
-            z-index:1;
-            opacity:0.8;
-        }
-
-
-
-
 
         .cloud{
             position: absolute;
@@ -100,7 +136,7 @@ body{
             text-align: right;
             font-family: sans-serif;
             font-weight: bold;
-            z-index:1000;
+            z-index:2000;
 
             &::after{
                 color:#00ff40;
