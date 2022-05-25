@@ -26,6 +26,7 @@
             <div class="altitude"></div>
             <div class="vertical"></div>
             <div class="cloud"></div>
+            <div class="framerate"></div>
             <div class="player">
                 <div class="body">
 
@@ -114,8 +115,6 @@
                     bottom = 0;
                     altitudeElement;
                     verticalElement;
-                    frameTime = 0;
-                    fpsInterval = 20;
                     mountains;
                     clouds = [];
                     playing = false;
@@ -130,8 +129,11 @@
                     canvasBoundX;
                     canvasBoundY;
 
+                    frameCount;
+
+                    currentFrame;
+
                     constructor($container,  $template){
-                        this.playing = true;
                         this.space = $container.children('.space');
                         this.mountains = $container.children('.mountains');
                         this.element = $template.clone();
@@ -140,6 +142,9 @@
 
                         this.verticalElement = $template.siblings('.vertical').clone();
                         this.verticalElement.appendTo($container);
+
+                        this.frameCount = $template.siblings('.framerate').clone();
+                        this.frameCount.appendTo($container);
 
                         this.building = $container.children('.building');
                         this.controllerPad = $container.children('.controller');
@@ -278,84 +283,83 @@
                     }
 
                     animatePlayer(){
-
-                        var now = Date.now();
-                        var elapsed = now - this.frameTime;
-
-                        if (elapsed > this.fpsInterval) {
-                            this.frameTime = now - (elapsed % this.fpsInterval);
-                            var deltaX = 0;
-                            var deltaY = 0;
-                            this.rotation = 0;
-                            var smoke;
-                            if(Object.keys(keyPress).length > 0){
-                                var thrust = false;
-                                for(const code in keyPress){
-                                    switch(code){
-                                        case "37"://left
-                                            deltaX -= 6;
-                                            this.rotation += -1*this.rotationAngle;
-                                            thrust = true;
-                                        break;
-                                        case "38"://up
-                                            deltaY += 10;
-                                            this.rotation += 0;
-                                            if(this.posY <= 0) this.posY = 1;
-                                            thrust = true;
-                                        break;
-                                        case "39"://right
-                                            deltaX += 6;
-                                            this.rotation += 1*this.rotationAngle;
-                                            if(this.posX <= 0) this.posX = 1;
-                                            thrust = true;
-                                        break;
-                                        case "40"://down
-                                            //deltaY -= 10;
-                                        break;
-                                    }
+                        this.playing = true;
+                        //var drawStartTime = Date.now();
+                        var deltaX = 0;
+                        var deltaY = 0;
+                        this.rotation = 0;
+                        var thrust = false;
+                        if(Object.keys(keyPress).length > 0){
+                            for(const code in keyPress){
+                                switch(code){
+                                    case "37"://left
+                                        deltaX -= 6;
+                                        this.rotation += -1*this.rotationAngle;
+                                        thrust = true;
+                                    break;
+                                    case "38"://up
+                                        deltaY += 10;
+                                        this.rotation += 0;
+                                        if(this.posY <= 0) this.posY = 1;
+                                        thrust = true;
+                                    break;
+                                    case "39"://right
+                                        deltaX += 6;
+                                        this.rotation += 1*this.rotationAngle;
+                                        if(this.posX <= 0) this.posX = 1;
+                                        thrust = true;
+                                    break;
+                                    case "40"://down
+                                        //deltaY -= 10;
+                                    break;
                                 }
-
-                                if(thrust){
-                                    smoke = new Smoke(this);
-                                    this.smoke.push(smoke);
-                                }
-                                
                             }
-
-                            for(var i = 0; i < this.smoke.length; i++){
-                                var smoke2 = [];
-                                if(this.smoke[i].visible){
-                                    smoke2.push(this.smoke[i]);
-                                }
-                                this.smoke = smoke2;
-                            }
-
-                            
-
-                            this.element.css('transform', 'rotate('+this.rotation+'deg)');
-
-                            
-                            this.deltaX += deltaX
-                            this.deltaY += deltaY
-
-                            this._gravity();
-                            this._airResistance();
-                            this._friction();
-
-
-                            if(Math.abs(this.deltaY) < 0.2){
-                                this.deltaY = 0;
-                            }
-                            if(Math.abs(this.deltaX) < 0.2){
-                                this.deltaX = 0;
-                            }
-                            this._translatePlayer();
-                            this.draw();
-                            this._calculateBounce();
-
-                            this.deltaX = this._roundVelocity(this.deltaX);
-                            this.deltaY = this._roundVelocity(this.deltaY);
                         }
+                        var smoke2 = [];
+                        for(var i = 0; i < this.smoke.length; i++){
+                            if((Date.now() - this.smoke[i].created) > 1000){
+                                this.smoke[i].destroy();
+                            }else{
+                                if(!this.smoke[i].visible){
+                                    this.smoke[i].animate();
+                                }
+                                smoke2.push(this.smoke[i]);
+                            }
+                        }
+                        this.smoke = smoke2;
+
+                        if(thrust){
+                            this.smoke.push(new Smoke(this));
+                        }
+
+                        
+
+                        this.element.css('transform', 'rotate('+this.rotation+'deg)');
+
+                        
+                        this.deltaX += deltaX
+                        this.deltaY += deltaY
+
+                        this._gravity();
+                        this._airResistance();
+                        this._friction();
+
+
+                        if(Math.abs(this.deltaY) < 0.2){
+                            this.deltaY = 0;
+                        }
+                        if(Math.abs(this.deltaX) < 0.2){
+                            this.deltaX = 0;
+                        }
+                        this._translatePlayer();
+                        this.draw();
+                        this._calculateBounce();
+
+                        this.deltaX = this._roundVelocity(this.deltaX);
+                        this.deltaY = this._roundVelocity(this.deltaY);
+
+                        //this.frameCount.html((Date.now() - drawStartTime)+"ms");
+                        
                         var self = this;
 
                         if(this.posY == 0 && Math.abs(this.deltaY) == 0 && Math.abs(this.deltaX) == 0){
@@ -571,10 +575,15 @@
             class Smoke{
                 element;
                 parent;
-                visible = true;
+                visible = false;
+                created;
+                xTranslate;
+                yTranslate;
+                scale;
 
                 constructor($parent){
                     this.parent = $parent;
+                    this.created = Date.now();
                     this.element = $('<div></div>');
                     this.element.addClass('smoke');
                     var left = this.parent.left + 48;
@@ -590,21 +599,12 @@
                     this.element.css('bottom', bottom);
                     this.element.css('left', left);
                     this.element.appendTo(this.parent.element.parent());
-                    
-                    var self = this;
-                    window.setTimeout(function(){ self.destroy(); }, 4000);
-                    window.setTimeout(function(){ self.animate(); }, 1);
-                }
 
-                animate(){
                     if(this.parent.deltaY < 0){
                         var scaleFactor = 0.5;
                     }else{
                         var scaleFactor = 2;
                     }
-
-                    
-
                     var vacFactor;
                     
                     if(this.parent.posY < this.parent.spaceOffset){
@@ -615,20 +615,24 @@
 
                     var yTranslate = Math.min(Math.floor(this.parent.deltaY*scaleFactor), 1600) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
                     var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
-                    var scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
+
+                    this.scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
 
                     var rads = this.parent.rotation*(Math.PI/180) * -1
-                    xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
 
-                    yTranslate = Math.cos(rads)*yTranslate;
+                    this.xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
+                    this.yTranslate = Math.cos(rads)*yTranslate;
 
+
+                }
+
+                animate(){
+                    this.visible = true;
                     this.element.css({
                         'background-color': "rgba(240, 240, 240, 0.5)",
-                        transform: 'translate('+xTranslate+'px, '+yTranslate+'px) scale('+scale+')',
+                        transform: 'translate('+this.xTranslate+'px, '+this.yTranslate+'px) scale('+this.scale+')',
                         opacity: 0
                     });
-
-                    
                 }
 
                 destroy(){

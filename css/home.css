@@ -146,7 +146,7 @@ body #canvas .cloud3 {
   background-image: url("../img/cloud3.png");
 }
 
-body #canvas .altitude, body #canvas .vertical {
+body #canvas .altitude, body #canvas .vertical, body #canvas .framerate {
   position: absolute;
   color: #00ff40;
   font-size: 28px;
@@ -157,13 +157,18 @@ body #canvas .altitude, body #canvas .vertical {
   z-index: 2000;
 }
 
-body #canvas .altitude::after, body #canvas .vertical::after {
+body #canvas .altitude::after, body #canvas .vertical::after, body #canvas .framerate::after {
   color: #00ff40;
   display: inline-block;
   font-size: 28px;
   width: 54px;
   text-align: left;
   padding-left: 4px;
+}
+
+body #canvas .framerate {
+  bottom: 0;
+  right: 0;
 }
 
 body #canvas .altitude::after {
