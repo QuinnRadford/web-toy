@@ -69,6 +69,7 @@
 
                 if(isMobileDevice){
                     player.alwaysShowControls = true;
+                    $('body').css('padding',0);
                     resizeControls();
                 }
 
@@ -105,8 +106,8 @@
                     posY=0;
                     deltaX=0;
                     deltaY=0;
-                    playerHeight = 25;
-                    playerWidth = 25;
+                    playerHeight = 100;
+                    playerWidth = 52;
                     rotationAngle = 35;
                     smoke = [];
                     rotation;
@@ -586,14 +587,15 @@
                     this.created = Date.now();
                     this.element = $('<div></div>');
                     this.element.addClass('smoke');
-                    var left = this.parent.left + 48;
+                    var smokeOrigin = (this.parent.playerWidth/2) - 4;
+                    var left = this.parent.left + smokeOrigin;
                     var bottom = this.parent.bottom;
 
                     if(this.parent.rotation !== 0){
                         var rads = this.parent.rotation*(Math.PI/180)
 
-                        left = this.parent.left + 48 - (Math.sin(rads) * (this.parent.element.height()/2));
-                        bottom = this.parent.bottom + 48 - (Math.cos(rads) * (this.parent.element.height()/2));
+                        left = this.parent.left + smokeOrigin - (Math.sin(rads) * (this.parent.element.height()/2));
+                        bottom = this.parent.bottom + this.parent.playerHeight/2 - (Math.cos(rads) * (this.parent.element.height()/2));
                     }
 
                     this.element.css('bottom', bottom);

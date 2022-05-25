@@ -182,10 +182,11 @@ body{
         z-index:1000;
         .body{
             background:100%;
-            width:100px;
+            width:52px;
             height:100px;
             background: url('../img/rocket2.png');
             background-position: center;
+            background-repeat: no-repeat;
             background-size: contain;
         }
     }
