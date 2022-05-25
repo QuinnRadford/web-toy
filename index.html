@@ -70,6 +70,7 @@
                 if(isMobileDevice){
                     player.alwaysShowControls = true;
                     $('body').css('padding',0);
+                    player.resizeCanvas();
                     resizeControls();
                 }
 
@@ -154,6 +155,7 @@
                         this.container = $container;
 
                         this.resizeCanvas();
+                        this.resizeCanvas();
 
                         this.posX = this.canvasWidth/2;
                         this.posY = this.canvasHeight/2;
@@ -185,7 +187,7 @@
                             this.container.css({
                                 height:"150%",
                                 width:"150%",
-                                transform:"scale(0.667) translate(-25%, -25%)"
+                                transform:"scale(0.6666) translate(-25%, -25%)"
                             });
                         }else{
                             this.container.css({
@@ -198,7 +200,7 @@
                         this.canvasWidth = this.container.width();
                         this.canvasBoundX = this.canvasWidth - this.playerWidth;
                         this.canvasBoundY = this.canvasHeight - this.playerHeight;
-                        this.building.css('left', Math.floor(this.canvasWidth*0.2) - 150 )
+                        this.building.css('left', Math.floor(this.canvasWidth*0.2) - 150 );
                     }
 
                     createCloudLayer(layerStart, layerSize, qty, zIndex, paralax){
