@@ -319,9 +319,11 @@
                             }
                         }
                         var smoke2 = [];
+                        var timeNow = Date.now();
                         for(var i = 0; i < this.smoke.length; i++){
-                            if((Date.now() - this.smoke[i].created) > 1000){
+                            if((timeNow - this.smoke[i].created) > 1000){
                                 this.smoke[i].destroy();
+                                delete this.smoke[i];
                             }else{
                                 if(!this.smoke[i].visible){
                                     this.smoke[i].animate();
@@ -617,7 +619,7 @@
                         vacFactor = Math.min((this.parent.posY - this.parent.spaceOffset)/this.parent.spaceStart, 1);
                     }
 
-                    var yTranslate = Math.min(Math.floor(this.parent.deltaY*scaleFactor), 1600) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
+                    var yTranslate = Math.min(Math.floor(this.parent.deltaY*scaleFactor), 1000) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
                     var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
 
                     this.scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
