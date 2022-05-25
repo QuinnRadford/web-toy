@@ -113,10 +113,10 @@ body{
         }
 
         .altitude::after{
-            content:"m";
+            content:"h";
         }
         .vertical::after{
-            content:"m/s";
+            content:"h/s";
         }
 
         .mountains{
