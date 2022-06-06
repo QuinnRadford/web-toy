@@ -13,6 +13,7 @@
             <div class="space"></div>
             <div class="mountains"></div>
             <div class="building"></div>
+            <canvas id="effects"></canvas>
             <div class="controller">
                 <div></div>
                 <div class="button active up" data-btn="up"></div>
@@ -39,11 +40,14 @@
             var allowedKeys = [37, 38, 39, 40];
             var $controls,$canvas,$playerTemplate,player;
             var isMobileDevice = false;
+            var EffectsCanvas = document.getElementById('effects');
+            var ctx = EffectsCanvas.getContext('2d');
+
+            
 
             $(document).ready(function(){
                 $canvas = $('#canvas');
                 $playerTemplate = $('#templates .player');
-
                 $controls = $('.controller');
 
                 player = new Player($canvas, $playerTemplate);
@@ -201,6 +205,9 @@
                         this.canvasBoundX = this.canvasWidth - this.playerWidth;
                         this.canvasBoundY = this.canvasHeight - this.playerHeight;
                         this.building.css('left', Math.floor(this.canvasWidth*0.2) - 150 );
+
+                        EffectsCanvas.height = this.canvasHeight;
+                        EffectsCanvas.width = this.canvasWidth;
                     }
 
                     createCloudLayer(layerStart, layerSize, qty, zIndex, paralax){
@@ -320,22 +327,22 @@
                         }
                         var smoke2 = [];
                         var timeNow = Date.now();
+
+                        if(thrust){
+                            this.smoke.push(new Smoke(this));
+                        }
+                        ctx.clearRect(0, 0, EffectsCanvas.width, EffectsCanvas.height);
                         for(var i = 0; i < this.smoke.length; i++){
                             if((timeNow - this.smoke[i].created) > 1000){
-                                this.smoke[i].destroy();
                                 delete this.smoke[i];
                             }else{
-                                if(!this.smoke[i].visible){
-                                    this.smoke[i].animate();
-                                }
+                                this.smoke[i].draw();
                                 smoke2.push(this.smoke[i]);
                             }
                         }
                         this.smoke = smoke2;
 
-                        if(thrust){
-                            this.smoke.push(new Smoke(this));
-                        }
+
 
                         
 
@@ -585,26 +592,25 @@
                 xTranslate;
                 yTranslate;
                 scale;
+                originX;
+                originY;
+                lifetime = 1000;
+                backgroundLifetime = 100;
 
                 constructor($parent){
                     this.parent = $parent;
                     this.created = Date.now();
-                    this.element = $('<div></div>');
-                    this.element.addClass('smoke');
-                    var smokeOrigin = (this.parent.playerWidth/2) - 4;
-                    var left = this.parent.left + smokeOrigin;
-                    var bottom = this.parent.bottom;
+                    var smokeOriginX = (this.parent.playerWidth/2);
+                    var smokeOriginY  = (this.parent.playerHeight/2) - 2;
+                    this.originX = this.parent.left + smokeOriginX;
+                    this.originY = this.parent.canvasHeight - this.parent.bottom - 2;
 
                     if(this.parent.rotation !== 0){
                         var rads = this.parent.rotation*(Math.PI/180)
 
-                        left = this.parent.left + smokeOrigin - (Math.sin(rads) * (this.parent.element.height()/2));
-                        bottom = this.parent.bottom + this.parent.playerHeight/2 - (Math.cos(rads) * (this.parent.element.height()/2));
+                        this.originX = this.parent.left + smokeOriginX - (Math.sin(rads) * smokeOriginY);
+                        this.originY = this.originY - (smokeOriginY - (Math.cos(rads) * smokeOriginY));
                     }
-
-                    this.element.css('bottom', bottom);
-                    this.element.css('left', left);
-                    this.element.appendTo(this.parent.element.parent());
 
                     if(this.parent.deltaY < 0){
                         var scaleFactor = 0.5;
@@ -632,18 +638,37 @@
 
                 }
 
-                animate(){
+                draw(){
                     this.visible = true;
-                    this.element.css({
-                        'background-color': "rgba(240, 240, 240, 0.5)",
-                        transform: 'translate('+this.xTranslate+'px, '+this.yTranslate+'px) scale('+this.scale+')',
-                        opacity: 0
-                    });
-                }
+                    var now = Date.now();
+                    var remaining = this.created + this.lifetime - now;
+                    if(remaining < 0) return;
+                    var ratio = remaining/this.lifetime;
+                    var reverseRatio = 1-ratio;
 
-                destroy(){
-                    this.visible = false;
-                    if(this.element) this.element.remove();
+                    var backgroundRemaining =  this.created + this.backgroundLifetime - now;
+                    if(backgroundRemaining < 0 )  backgroundRemaining = 0;
+                    var backgroundRatio = 1 - (backgroundRemaining/this.backgroundLifetime);
+
+                    var xPos = this.originX + (this.xTranslate*reverseRatio);
+                    var yPos = this.originY + (this.yTranslate*reverseRatio);
+
+                    var radius = Math.round(2.5 + ((2.5*(this.scale) - 2.5) * reverseRatio));
+
+
+                    var red = 255 + ((240 - 255) * backgroundRatio);
+                    var green = 244 + ((240 - 244) * backgroundRatio);
+                    var blue = 88 + ((240 - 88) * backgroundRatio);
+                    var opacity = 0.7 + ((0.5 - 0.7) * backgroundRatio); //background transition
+
+                    opacity = opacity + ((0 - opacity) * reverseRatio); //global opacity transition
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(xPos, yPos, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = "rgba("+red+", "+green+", "+blue+", "+opacity+")";
+                    ctx.fill();
+                    ctx.restore();
                 }
             }
 

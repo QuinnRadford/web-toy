@@ -9,6 +9,13 @@ body{
     box-sizing: border-box;
     overflow:hidden;
 
+    #effects{
+        z-index:1;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+    }
+
     #canvas{
         position: relative;
         height:100%;

@@ -12,6 +12,13 @@ body {
   overflow: hidden;
 }
 
+body #effects {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+
 body #canvas {
   position: relative;
   height: 100%;
