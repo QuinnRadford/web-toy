@@ -188,22 +188,22 @@ body{
             background-position: bottom center;
             background-repeat: no-repeat;
             z-index:901;
-            animation: floating 60s linear infinite;
+            animation: floating 40s linear infinite;
             @keyframes floating {
                 0% {
                     transform: translateY(0) translateX(0);
                 }
                 25% {
-                    transform: translateY(25px) translateX(-25vw);
+                    transform: translateY(25px) translateX(calc(-25vw - 128px));
                 }
                 50% {
-                    transform: translateY(0) translateX(-50vw);
+                    transform: translateY(0) translateX(calc(-50vw - 256px));
                 }
                 75% {
-                    transform: translateY(-25px) translateX(-75vw);
+                    transform: translateY(-25px) translateX(calc(-75vw - 384px));
                 }
                 100% {
-                    transform: translateY(0) translateX(-100vw);
+                    transform: translateY(0) translateX(calc(-100vw - 512px));
                 }
             }
 
