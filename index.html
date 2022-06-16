@@ -13,6 +13,7 @@
             <div class="space"></div>
             <div class="mountains"></div>
             <div class="building"></div>
+            <div class="blimp"><div class="text-scroll"><marquee behavior="scroll" direction="left">WELCOME TO MY WEB ZONE</marquee></div></div>
             <canvas id="effects"></canvas>
             <div class="controller">
                 <div></div>
@@ -142,6 +143,7 @@
                     constructor($container,  $template){
                         this.space = $container.children('.space');
                         this.mountains = $container.children('.mountains');
+                        this.blimp = $container.children('.blimp');
                         this.element = $template.clone();
                         this.altitudeElement = $template.siblings('.altitude').clone();
                         this.altitudeElement.appendTo($container);
@@ -259,6 +261,14 @@
                         var paralaxLimit = this.canvasBoundY/2;
                         if(this.posY > paralaxLimit){
                             this.mountains.css('bottom', Math.floor((this.posY-paralaxLimit)/paralax)*-1);
+                        }
+                    }
+
+                    _positionBlimp(){
+                        var paralax = 6;
+                        var paralaxLimit = this.canvasBoundY/2;
+                        if(this.posY > paralaxLimit){
+                            this.blimp.css('bottom', 650 + Math.floor((this.posY-paralaxLimit)/paralax)*-1);
                         }
                     }
 
@@ -452,6 +462,7 @@
                             this.bottom -= offset;
                         }
                         this._positionMountains();
+                        this._positionBlimp();
                         this._positionSpace();
                         this._positionBuilding();
                         this._skyColour();

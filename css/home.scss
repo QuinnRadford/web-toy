@@ -10,7 +10,7 @@ body{
     overflow:hidden;
 
     #effects{
-        z-index:1;
+        z-index:901;
         position: absolute;
         left: 0;
         bottom: 0;
@@ -176,6 +176,48 @@ body{
             background-position: bottom center;
             background-repeat: no-repeat;
             z-index:1;
+        }
+
+        .blimp{
+            position: absolute;
+            width:512px;
+            height:256px;
+            right:-512px;
+            background: url('../img/blimbp.png');
+            background-size: cover;
+            background-position: bottom center;
+            background-repeat: no-repeat;
+            z-index:901;
+            animation: floating 60s linear infinite;
+            @keyframes floating {
+                0% {
+                    transform: translateY(0) translateX(0);
+                }
+                25% {
+                    transform: translateY(25px) translateX(-25vw);
+                }
+                50% {
+                    transform: translateY(0) translateX(-50vw);
+                }
+                75% {
+                    transform: translateY(-25px) translateX(-75vw);
+                }
+                100% {
+                    transform: translateY(0) translateX(-100vw);
+                }
+            }
+
+            .text-scroll{
+                position:absolute;
+                top: 98px;
+                left: 110px;
+                height: 60px;
+                width: 246px;
+                font-size: 47px;
+                color: #ff9900;
+                opacity: 0.9;
+                font-family: monospace;
+            }
         }
     }
 

@@ -13,7 +13,7 @@ body {
 }
 
 body #effects {
-  z-index: 1;
+  z-index: 901;
   position: absolute;
   left: 0;
   bottom: 0;
@@ -195,6 +195,78 @@ body #canvas .mountains {
   background-position: bottom center;
   background-repeat: no-repeat;
   z-index: 1;
+}
+
+body #canvas .blimp {
+  position: absolute;
+  width: 512px;
+  height: 256px;
+  right: -512px;
+  background: url("../img/blimbp.png");
+  background-size: cover;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  z-index: 901;
+  -webkit-animation: floating 60s linear infinite;
+          animation: floating 60s linear infinite;
+}
+
+@-webkit-keyframes floating {
+  0% {
+    -webkit-transform: translateY(0) translateX(0);
+            transform: translateY(0) translateX(0);
+  }
+  25% {
+    -webkit-transform: translateY(25px) translateX(-25vw);
+            transform: translateY(25px) translateX(-25vw);
+  }
+  50% {
+    -webkit-transform: translateY(0) translateX(-50vw);
+            transform: translateY(0) translateX(-50vw);
+  }
+  75% {
+    -webkit-transform: translateY(-25px) translateX(-75vw);
+            transform: translateY(-25px) translateX(-75vw);
+  }
+  100% {
+    -webkit-transform: translateY(0) translateX(-100vw);
+            transform: translateY(0) translateX(-100vw);
+  }
+}
+
+@keyframes floating {
+  0% {
+    -webkit-transform: translateY(0) translateX(0);
+            transform: translateY(0) translateX(0);
+  }
+  25% {
+    -webkit-transform: translateY(25px) translateX(-25vw);
+            transform: translateY(25px) translateX(-25vw);
+  }
+  50% {
+    -webkit-transform: translateY(0) translateX(-50vw);
+            transform: translateY(0) translateX(-50vw);
+  }
+  75% {
+    -webkit-transform: translateY(-25px) translateX(-75vw);
+            transform: translateY(-25px) translateX(-75vw);
+  }
+  100% {
+    -webkit-transform: translateY(0) translateX(-100vw);
+            transform: translateY(0) translateX(-100vw);
+  }
+}
+
+body #canvas .blimp .text-scroll {
+  position: absolute;
+  top: 98px;
+  left: 110px;
+  height: 60px;
+  width: 246px;
+  font-size: 47px;
+  color: #ff9900;
+  opacity: 0.9;
+  font-family: monospace;
 }
 
 body #templates {
