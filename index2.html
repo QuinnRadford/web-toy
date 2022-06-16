@@ -318,6 +318,8 @@
 
                     var deltaVector = this._vectorMultiply(this._vectorMultiply(this._vectorMultiply(centerDistance, dot/(magnitude ** 2)), massOffset ), 0.5);
 
+                    var rotationRange = this._vectorMagnitude(deltaVector)* 0.1;
+                    this.deltaR += ((Math.random()*rotationRange) - (rotationRange/2)) * this.parentGame.deltaTime;
                     return this._vectorSubtract({x:circle1.deltaX, y:circle2.deltaY}, deltaVector);
                 }
 
