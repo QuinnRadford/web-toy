@@ -1,0 +1,179 @@
+// Small tablets and large smartphones (landscape view)
+$screen-sm-min: 576px;
+
+// Small tablets (portrait view)
+$screen-md-min: 768px;
+
+// Tablets and small desktops
+$screen-lg-min: 992px;
+
+// Large tablets and desktops
+$screen-xl-min: 1200px;
+
+// Small devices
+@mixin sm {
+    @media (min-width: #{$screen-sm-min}) {
+        @content;
+    }
+ }
+ 
+ // Medium devices
+ @mixin md {
+    @media (min-width: #{$screen-md-min}) {
+        @content;
+    }
+ }
+ 
+ // Large devices
+ @mixin lg {
+    @media (min-width: #{$screen-lg-min}) {
+        @content;
+    }
+ }
+ 
+ // Extra large devices
+ @mixin xl {
+    @media (min-width: #{$screen-xl-min}) {
+        @content;
+    }
+ }
+
+
+html{
+    height:100%;
+}
+body{
+    height:100%;
+    width:100%;
+    margin:0;
+    padding:40px;
+    box-sizing: border-box;
+    overflow:hidden;
+
+    background:url('../img/seamless_space.png');
+}
+
+.content{
+    height:100%;
+    width:100%;
+    position: relative;
+    canvas{
+        position: absolute;
+        left:0;
+        right:0;
+        height:100%;
+        width:100%;
+    }
+}
+
+.player{
+    width:50px;
+    height:50px;
+    position: absolute;
+    .body{
+        width:50px;
+        height:50px;
+    }
+}
+
+.text-complete{
+    position: absolute;
+    font-size: 20px;
+    width:90%;
+    height:50%;
+    left:5vw;
+    top:15vh;
+    color:white;
+    font-size: 20px;
+    line-height: 2em;
+    font-family: sans-serif;
+
+    @include sm {
+        font-size: 20px;
+        width:90%;
+        height:50%;
+        left:5vw;
+        top:15vh;
+    }
+
+    @include md {
+        font-size: 20px;
+        width:70%;
+        height:50%;
+        left:15vw;
+        top:20vh;
+    }
+
+    @include lg {
+        font-size: 30px;
+        width:50%;
+        height:50%;
+        left:25vw;
+        top:25vh;
+    }
+
+    @include xl {
+        font-size: 30px;
+        width:50%;
+        height:50%;
+        left:25vw;
+        top:25vh;
+    }
+    
+}
+
+.controller{
+    position: absolute;
+    height:169px;
+    width:256px;
+    z-index: 2000;
+
+    display:flex;
+    flex-wrap: wrap;
+    gap:4px;
+
+    bottom:40px;
+    right:40px;
+
+    div{
+        height:calc(50% - 3px);
+        flex-basis:calc(33.33% - 3px);
+        border-radius: 8px;
+    }
+
+    .button{
+        outline: 6px solid #d1d1d1;
+        outline-offset: -6px;
+        opacity:0.8;
+        &::after{
+            display:block;
+            content:"";
+            height:100%;
+            width:100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            filter:invert(1);
+        }
+    }
+    .active{
+        outline: 6px solid white;
+    }
+
+    .up::after{
+        background-image:url('../img/arrow.svg');
+        transform:rotate(0);
+    }
+    .left::after{
+        background-image:url('../img/arrow.svg');
+        transform:rotate(-90deg);
+    }
+    .right::after{
+        background-image:url('../img/arrow.svg');
+        transform:rotate( 90deg);
+    }
+
+    .action::after{
+        background-image:url('../img/butterfly-catch-svgrepo-com.svg');
+    }
+}

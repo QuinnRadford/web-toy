@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Quinn's Webzone</title>
+        <script src="js/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="css/home2.css"/>
+    </head>
+    <body>
+        <div class="content">
+            <div class="text-complete"></div>
+            <canvas id="screen"></canvas>
+            <canvas id="effects"></canvas>
+            <canvas id="ui"></canvas>
+            <div class="controller">
+                <div></div>
+                <div class="button active up" data-btn="up"></div>
+                <div></div>
+                <div class="button active left" data-btn="left"></div>
+                <div class="button active action" data-btn="space"></div>
+                <div class="button active right" data-btn="right"></div>
+            </div>
+        </div>
+
+        <script>
+            var keyPress = {};
+            var allowedKeys = [37, 38, 39, 40, 32];
+            var $controls,$container,$playerTemplate,player,game;
+            var isMobileDevice = false;
+
+            var words = "Welcome to my WebZone! I am a compluter programmer, photographer, and dog petter in Vancouver, BC. I work as a software engineer at Auphan Software, developing software for the restaurant industry. I am also employed as a dog petter at My House Vancouver.";
+
+            $(document).ready(function(){
+                $container = $('.content');
+                $controls = $('.controller');
+
+                game = new Game($controls, $container)
+
+
+                if(isTouchDevice()){
+                    isMobileDevice = true;
+                    $controls.on('touchstart', '.active', function(){
+                        useControl($(this).data("btn"), true);
+                    });
+                    $controls.on('touchend', '.active', function(){
+                        useControl($(this).data("btn"), false);
+                    });
+                }else{
+                    $controls.on('mousedown', '.active', function(){
+                        useControl($(this).data("btn"), true);
+                    });
+                    $controls.on('mouseup', '.active', function(){
+                        useControl($(this).data("btn"), false);
+                    });
+                }
+
+                if(isMobileDevice){
+                    $('body').css('padding',0);
+                    game.resizeCanvas();
+                    resizeControls();
+                }
+
+                $(document).on('keydown', function(e){
+                    var code = e.keyCode || e.which;
+                    pressButton(code);
+                });
+
+                $(document).on('keyup', function(e){
+                    var code = e.keyCode || e.which;
+                    unpressButton(code);
+                });
+
+                window.onresize = function(){
+                    game.resizeCanvas();
+                    if(isMobileDevice){
+                        resizeControls();
+                    }
+                    
+                }
+
+                function resizeControls(){
+                    $controls.css('right', Math.floor(($container.width() - $controls.width())/2));
+                }
+
+                //render
+                window.requestAnimationFrame(function(){game.play(Date.now());});
+            });
+
+            class Game{
+                canvasWidth;
+                canvasHeight;
+                canvasBoundX;
+                canvasBoundY;
+                container;
+
+                effectsCtx;
+                effectsCanvas;
+                effectsObjects = [];
+
+                screenCtx;
+                screenCanvas;
+                screenObjects = [];
+
+                uiCtx;
+                uiCanvas;
+
+                gameObjects;
+
+                playing;
+                collisionList = {};
+                wordParts;
+                foundWords = [];
+
+
+
+                constructor($controls, $container){
+                    this.effectsCanvas = document.getElementById('effects');
+                    this.effectsCtx = this.effectsCanvas.getContext('2d');
+
+                    this.screenCanvas = document.getElementById('screen');
+                    this.screenCtx = this.screenCanvas.getContext('2d');
+
+                    this.uiCanvas = document.getElementById('ui');
+                    this.uiCtx = this.uiCanvas.getContext('2d');
+
+                    this.container = $container;
+
+                    this.controllerPad = $controls;
+                    this.playing = true;
+
+                    this.resizeCanvas();
+                    this.resizeCanvas();
+
+                    this.screenObjects['player'] = new Player('player', this, this.screenCtx);
+
+                    this.wordParts = words.split(' ');
+
+                    for(var i = 0; i < this.wordParts.length; i++){
+                        this.screenObjects['word_'+i] = new Word(this.wordParts[i], 'word_'+i, this, this.screenCtx);
+                    }
+
+                    this.buildText();
+                    
+                }
+
+                renderEffects(){
+                    var effects2 = [];
+                    this.effectsCtx.clearRect(0, 0, this.effectsCtx.canvas.clientWidth, this.effectsCtx.canvas.clientHeight);
+                    var timeNow = Date.now();
+                    for(var i = 0; i < this.effectsObjects.length; i++){
+                        if((timeNow - this.effectsObjects[i].created) > this.effectsObjects[i].lifetime){
+                            delete this.effectsObjects[i];
+                        }else{
+                            this.effectsObjects[i].draw();
+                            effects2.push(this.effectsObjects[i]);
+                        }
+                    }
+                    this.effectsObjects = effects2;
+                }
+
+                play(frameTime){
+                    var drawStart = Date.now();
+                    this.deltaTime = (drawStart - frameTime)/1000;
+
+                    for(const c in this.collisionList){
+                        if(drawStart - this.collisionList[c]  > 1000){
+                            delete this.collisionList[c];
+                        }
+                    }
+
+                    this.screenCtx.clearRect(0, 0, this.screenCtx.canvas.clientWidth, this.screenCtx.canvas.clientHeight);
+                    for(const obj in this.screenObjects){
+                        this.screenObjects[obj].animate();
+                    }
+
+
+                    for(const obj in this.screenObjects){
+                        this.screenObjects[obj].collisionCheck(this.screenObjects)
+                    }
+                    
+
+                    this.renderEffects();
+
+                    var self = this;
+                    window.requestAnimationFrame(function(){self.play(drawStart);});
+                }
+
+                foundWord(index){
+                    delete this.screenObjects[index];
+                    this.foundWords.push(index);
+                    this.buildText();
+                }
+
+                buildText(){
+                    var $text =  $('.text-complete');
+                    $text.empty();
+                    for(var i = 0; i < this.wordParts.length; i++){
+                        $text.append('<span class="word_'+i+'">'+this.wordParts[i]+'</span> ');
+                    }
+
+                    $text.find('span').css('visibility', 'hidden');
+                    for(var i = 0; i < this.foundWords.length; i++){
+                        $text.find('.'+this.foundWords[i]).css('visibility', 'visible');
+                    }
+                }
+
+                resizeCanvas(){
+                    if(this.container.width() <= 480){
+                        this.container.css({
+                            height:"150%",
+                            width:"150%",
+                            transform:"scale(0.6666) translate(-25%, -25%)"
+                        });
+                    }else{
+                        this.container.css({
+                            height:"100%",
+                            width:"100%",
+                            transform:""
+                        });
+                    }
+                    this.canvasHeight = this.container.height();
+                    this.canvasWidth = this.container.width();
+                    this.canvasBoundX = this.canvasWidth - 50;
+                    this.canvasBoundY = this.canvasHeight - 50;
+
+                    this.effectsCanvas.height = this.canvasHeight;
+                    this.effectsCanvas.width = this.canvasWidth;
+
+                    this.screenCanvas.height = this.canvasHeight;
+                    this.screenCanvas.width = this.canvasWidth;
+                    
+                    this.uiCanvas.height = this.canvasHeight;
+                    this.uiCanvas.width = this.canvasWidth;
+                }
+
+            }
+
+            class PhysicsObject{
+                resistance = 2;
+                posX=0;
+                posY=0;
+                deltaX=0;
+                deltaY=0;
+                deltaR=0;
+                hasCollision = true;
+                height = 50;
+                width = 52;
+                rotationSpeed = 180;
+                rotation = 0;
+                mass = 1;
+
+                left = 0;
+                top = 0;
+
+                context;
+                parentGame;
+                collision = false;
+
+                constructor(id, parentGame, context){
+                    this.context = context;
+                    this.parentGame = parentGame;
+                    this.id = id;
+                }
+
+                update(){
+
+                }
+
+
+                collisionCheck(colliderList){
+                    if(!this.hasCollision) return true;
+
+                    var circle1 = this.getCircleCollider();
+/*                     this.context.beginPath();
+                    this.context.strokeStyle = "red";
+                    this.context.arc(circle1.x, circle1.y, circle1.radius, 0, 2 * Math.PI);
+                    this.context.stroke(); */
+
+                    for(const obj in colliderList){
+
+                        if(!colliderList[obj].hasCollision) continue;
+                        if(this.parentGame.collisionList[this.id+"_"+colliderList[obj].id] || this.parentGame.collisionList[colliderList[obj].id +"_"+ this.id]) continue;
+
+                        
+
+                        var circle2 = colliderList[obj].getCircleCollider();
+
+                        if(circle1.x == circle2.x && circle1.y == circle2.y) continue; //same creature
+
+                        var dx = circle1.x - circle2.x;
+                        var dy = circle1.y - circle2.y;
+                        var distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < circle1.radius + circle2.radius ) {
+                            var vector1 = this._vectorCollision(circle1, circle2);
+                            var vector2 = this._vectorCollision(circle2, circle1);
+                            this.deltaX = vector1.x;
+                            this.deltaY = vector1.y;
+
+                            colliderList[obj].deltaX = vector2.x
+                            colliderList[obj].deltaY = vector2.y
+
+                            this.parentGame.collisionList[this.id+"_"+colliderList[obj].id] = Date.now();
+                            break;
+                        }
+                    }
+                }
+
+                _vectorCollision(circle1, circle2){
+                    var centerDistance =  this._vectorSubtract(circle1, circle2);
+
+                    var deltaV =  this._vectorSubtract({x:circle1.deltaX, y:circle1.deltaY}, {x:circle2.deltaX, y:circle2.deltaY} );
+                    var dot = this._dotProduct(deltaV, centerDistance);
+                    var magnitude = this._vectorMagnitude(centerDistance);
+                    var massOffset = (2*circle2.mass)/(circle1.mass+circle2.mass);
+
+                    var deltaVector = this._vectorMultiply(this._vectorMultiply(this._vectorMultiply(centerDistance, dot/(magnitude ** 2)), massOffset ), 0.5);
+
+                    return this._vectorSubtract({x:circle1.deltaX, y:circle2.deltaY}, deltaVector);
+                }
+
+                _vectorSubtract(vector1,vector2){
+                    return {x:vector1.x-vector2.x, y:vector1.y-vector2.y};
+                }
+
+                _vectorMultiply(vector1, scalar){
+                    return {x:vector1.x*scalar, y:vector1.y*scalar};
+                }
+
+                _vectorMagnitude(vector){
+                    return Math.sqrt(vector.x ** 2 + vector.y ** 2);
+                }
+                _dotProduct(vector1, vector2){
+                    return (vector1.x * vector2.x) + (vector1.y * vector2.y);
+                }
+
+                getCircleCollider(){
+                    return {x: (this.left + this.width/2), y:(this.top + this.height/2), radius:((this.height + this.width)/2)/2, deltaX:this.deltaX, deltaY:this.deltaY, mass:this.mass}
+                }
+
+
+                _airResistance(){
+                    this._applyFrictionY( 0.001, this.resistance );
+                    this._applyFrictionX( 0.001, this.resistance );
+                    this._applyFrictionR( 0.001, this.resistance );
+                }
+
+                animate(){
+                    this.collision = false;
+                    this.update();
+
+                    this.rotation += this.deltaR*this.parentGame.deltaTime;
+
+                    this._airResistance();
+                    //this._friction();
+
+                    if(Math.abs(this.deltaY) < 0.01){
+                        this.deltaY = 0;
+                    }
+                    if(Math.abs(this.deltaX) < 0.01){
+                        this.deltaX = 0;
+                    }
+                    this._translatePlayer();
+                    this.draw();
+                    this._calculateBounce();
+
+                    this.deltaX = this._roundVelocity(this.deltaX);
+                    this.deltaY = this._roundVelocity(this.deltaY);
+                }
+
+                _translatePlayer(){
+                    var finalY = this._roundVelocity(this.posY + this.deltaY*this.parentGame.deltaTime);
+                    var finalX = this._roundVelocity(this.posX + this.deltaX*this.parentGame.deltaTime);
+
+                    if(finalY < 0) finalY = 0;
+                    if(finalX < 0) finalX = 0;
+                    if(finalY < 1) finalY = Math.round(finalY);
+                    if(finalX < 1) finalX = Math.round(finalX);
+                    if(finalX > this.parentGame.canvasBoundX) finalX = this.parentGame.canvasBoundX;
+
+                    this.posX = finalX;
+                    this.posY = finalY;
+                }
+
+                drawObject(){
+
+                }
+
+                draw(){
+                    this.left = this.posX;
+                    this.top = this.context.canvas.clientHeight - this.posY;
+                    this.context.save();
+                    var translateX = this.left + (this.width/2);
+                    var translateY = this.top + (this.height/2);
+                    this.context.translate(translateX, translateY);
+                    var rads = this.rotation*(Math.PI/180);
+                    this.context.rotate(rads);
+                    this.context.translate(translateX*-1, translateY*-1);
+                    this.drawObject();
+                    this.context.restore();
+                    
+                }
+
+                _calculateBounce(){
+                    if(this.posY <= 0){
+                        this.deltaY = -1*this.deltaY*0.8;
+                    }
+
+                    if(this.posY >= this.parentGame.canvasBoundY){
+                        this.deltaY = -1*this.deltaY*0.8;
+                    }
+
+                    if(this.posX >= this.parentGame.canvasBoundX || this.posX <= 0){
+                        this.deltaX = -1*this.deltaX*0.8;
+                    }
+                }
+
+                _roundVelocity(vel){
+                    return Math.round((vel + Number.EPSILON) * 1000) / 1000;
+                }
+
+                _friction(){
+                    if(this.posY <= 0){
+                        this._applyFrictionX(0.01, this.resistance*4);
+                    }
+                }
+
+                _applyFrictionX(factor, amount){
+                    var absDeltaX = Math.abs(this.deltaX);
+                    if(absDeltaX > 0){
+                        var nextDeltaX = absDeltaX - (((absDeltaX*factor) + amount)*this.parentGame.deltaTime);
+                        this.deltaX = nextDeltaX > 0 ? nextDeltaX*Math.sign(this.deltaX) : 0;
+                    }
+                }
+
+                _applyFrictionR(factor, amount){
+                    var absDeltaR = Math.abs(this.deltaR);
+                    if(absDeltaR > 0){
+                        var nextDeltaR = absDeltaR - (((absDeltaR*factor) + amount)*this.parentGame.deltaTime);
+                        this.deltaR = nextDeltaR > 0 ? nextDeltaR*Math.sign(this.deltaR) : 0;
+                    }
+                }
+
+                _applyFrictionY(factor, amount){
+                    var absDeltaY = Math.abs(this.deltaY);
+                    if(absDeltaY > 0){
+                        var nextDeltaY = absDeltaY - (((absDeltaY*factor) + amount)*this.parentGame.deltaTime);
+                        this.deltaY = nextDeltaY > 0 ? nextDeltaY*Math.sign(this.deltaY) : 0;
+                    }
+                }
+                
+            }
+
+            class Player extends PhysicsObject{
+
+                constructor(...args){
+                    super(...args);
+                    this.height = 60;
+                    this.width = 52;
+                    this.smoke = [];
+                    this.posX = this.parentGame.canvasWidth/2;
+                    this.posY = this.parentGame.canvasHeight/2;
+                    this.mass = 4;
+                }
+
+                update(){
+                    var deltaX = 0;
+                    var deltaY = 0;
+                    var deltaR = 0;
+
+                    var thrust = false;
+                    if(Object.keys(keyPress).length > 0){
+                        for(const code in keyPress){
+                            switch(code){
+                                case "37"://left
+                                    deltaR += -1*this.rotationSpeed;
+                                break;
+                                case "38"://up
+                                    deltaY += 100;
+                                    if(this.posY <= 0) this.posY = 1;
+                                    thrust = true;
+                                break;
+                                case "39"://right
+                                    deltaR += 1*this.rotationSpeed;
+                                    if(this.posX <= 0) this.posX = 1;
+                                break;
+                                case "32":
+                                    this.captureWord();
+                                break;
+                                case "40"://down
+                                    //deltaY -= 10;
+                                break;
+                            }
+                        }
+                    }
+
+                    this.deltaR += deltaR*this.parentGame.deltaTime;
+
+                    if(thrust){
+                        this.parentGame.effectsObjects.push(new Smoke(this));
+                    }
+
+                    var rads = this.rotation*(Math.PI/180)*-1;
+                    this.deltaX += Math.sin(rads)*deltaY*this.parentGame.deltaTime * -1;
+                    this.deltaY += Math.cos(rads)*deltaY*this.parentGame.deltaTime;
+                }
+
+                captureWord(){
+                    var circle1 = this.getCircleCollider();
+                    circle1.radius = circle1.radius*3;
+                    this.context.beginPath();
+                    this.context.strokeStyle = "blue";
+                    this.context.arc(circle1.x, circle1.y, circle1.radius, 0, 2 * Math.PI);
+                    this.context.stroke();
+
+                    for(const obj in this.parentGame.screenObjects){
+                        if(this.id == this.parentGame.screenObjects[obj].id) continue; //same creature
+
+                        var circle2 = this.parentGame.screenObjects[obj].getCircleCollider();
+
+                        var dx = circle1.x - circle2.x;
+                        var dy = circle1.y - circle2.y;
+
+                        var distance = Math.sqrt((dx ** 2) + (dy ** 2));
+
+                        if (distance < circle1.radius + circle2.radius ) {
+                            this.parentGame.foundWord(obj);
+                        }
+                    }
+                }
+
+                drawObject(){
+                    this.context.beginPath();
+                    this.context.rect(this.left, this.top, 50, 60);
+                    this.context.fillStyle = "white";
+                    this.context.fill();
+                }
+
+            }
+
+            class Word extends PhysicsObject{
+                constructor(word, ...args){
+                    super(...args);
+                    
+                    this.posX = Math.floor(10 + Math.random()*(this.parentGame.canvasWidth - 20) );
+                    this.posY = Math.floor(10 + Math.random()*(this.parentGame.canvasHeight - 20) );
+                    this.deltaX = (Math.random()*100) - 50;
+                    this.deltaY = (Math.random()*100) - 50;
+                    this.deltaR = (Math.random()*100) - 50;
+                    this.rotation = (Math.random()*360) - 180;
+                    
+                    this.context.save();
+                    this.word = word;
+                    this.context.font = "18px/20px Arial";
+                    var text = this.context.measureText(this.word)
+                    this.width = text.width;
+                    this.height = 20;
+                    this.context.restore();
+                }
+
+                drawObject(){
+                    this.context.beginPath();
+                    this.context.fillStyle = "white";
+                    this.context.strokeStyle = "white";
+                    this.context.font = "18px/20px Arial";
+                    this.context.fillText(this.word, this.left, this.top + this.height/2);
+                }
+            }
+
+            class Smoke{
+                element;
+                parent;
+                visible = false;
+                created;
+                xTranslate;
+                yTranslate;
+                scale;
+                originX;
+                originY;
+                lifetime = 1000;
+                backgroundLifetime = 100;
+                context;
+
+                constructor($parent){
+                    this.context = $parent.parentGame.effectsCtx;
+                    this.parent = $parent;
+                    this.created = Date.now();
+                    var smokeOriginX = (this.parent.width/2);
+                    var smokeOriginY  = (this.parent.height/2) - 2;
+                    this.originX = this.parent.left + smokeOriginX;
+                    this.originY = this.parent.height + this.parent.top;
+
+                    if(this.parent.rotation !== 0){
+                        var rads = this.parent.rotation*(Math.PI/180)
+
+                        this.originX = this.parent.left + smokeOriginX - (Math.sin(rads) * smokeOriginY);
+                        this.originY = this.originY - (smokeOriginY - (Math.cos(rads) * smokeOriginY));
+                    }
+
+                    if(this.parent.deltaY < 0){
+                        var scaleFactor = 0.5;
+                    }else{
+                        var scaleFactor = 2;
+                    }
+                    var vacFactor;
+                    
+                    vacFactor = 0;
+
+                    var yTranslate = Math.min(500) + Math.floor(100*vacFactor) + Math.floor(Math.random()*60 - 30);
+                    var xTranslate = 0 + Math.floor(Math.random()*40 - 20) + Math.floor(10*vacFactor);
+
+                    this.scale = 40 + Math.floor(Math.random()*20 - 10) + Math.floor(80*vacFactor);
+
+                    var rads = this.parent.rotation*(Math.PI/180) * -1
+
+                    this.xTranslate = (Math.sin(rads)*yTranslate) + xTranslate;
+                    this.yTranslate = Math.cos(rads)*yTranslate;
+
+
+                }
+
+                draw(){
+                    this.visible = true;
+                    var now = Date.now();
+                    var remaining = this.created + this.lifetime - now;
+                    if(remaining < 0) return;
+                    var ratio = remaining/this.lifetime;
+                    var reverseRatio = 1-ratio;
+
+                    var backgroundRemaining =  this.created + this.backgroundLifetime - now;
+                    if(backgroundRemaining < 0 )  backgroundRemaining = 0;
+                    var backgroundRatio = 1 - (backgroundRemaining/this.backgroundLifetime);
+
+                    var xPos = this.originX + (this.xTranslate*reverseRatio);
+                    var yPos = this.originY + (this.yTranslate*reverseRatio);
+
+                    var radius = Math.round(2.5 + ((2.5*(this.scale) - 2.5) * reverseRatio));
+
+
+                    var red = 255 + ((240 - 255) * backgroundRatio);
+                    var green = 244 + ((240 - 244) * backgroundRatio);
+                    var blue = 88 + ((240 - 88) * backgroundRatio);
+                    var opacity = 0.7 + ((0.5 - 0.7) * backgroundRatio); //background transition
+
+                    opacity = opacity + ((0 - opacity) * reverseRatio); //global opacity transition
+
+                    this.context.save();
+                    this.context.beginPath();
+                    this.context.arc(xPos, yPos, radius, 0, 2 * Math.PI);
+                    this.context.fillStyle = "rgba("+red+", "+green+", "+blue+", "+opacity+")";
+                    this.context.fill();
+                    this.context.restore();
+                }
+            }
+
+            function isTouchDevice() {
+                return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
+            }
+
+            function useControl(button, active){
+                    var code;
+                    switch(button){
+                        case "up":
+                            code = 38;
+                        break;
+                        case "left":
+                            code = 37;
+                        break;
+                        case "right":
+                            code = 39;
+                        break;
+                        case "space":
+                            code = 32;
+                        break;
+                    }
+                    if(active && code){
+                        pressButton(code);
+                    }else{
+                        unpressButton(code);
+                    }
+                }
+
+                function pressButton(code){
+                    if(allowedKeys.includes(code))keyPress[code] = true;
+                    if(!game.playing) window.requestAnimationFrame(function(){game.play(Date.now());});
+                }
+
+                function unpressButton(code){
+                    if(keyPress[code]) delete keyPress[code];
+                }
+
+        </script>
+
+    </body>
+</html>

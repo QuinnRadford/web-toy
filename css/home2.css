@@ -1,0 +1,159 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 40px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  overflow: hidden;
+  background: url("../img/seamless_space.png");
+}
+
+.content {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.content canvas {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.player {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+}
+
+.player .body {
+  width: 50px;
+  height: 50px;
+}
+
+.text-complete {
+  position: absolute;
+  font-size: 20px;
+  width: 90%;
+  height: 50%;
+  left: 5vw;
+  top: 15vh;
+  color: white;
+  font-size: 20px;
+  line-height: 2em;
+  font-family: sans-serif;
+}
+
+@media (min-width: 576px) {
+  .text-complete {
+    font-size: 20px;
+    width: 90%;
+    height: 50%;
+    left: 5vw;
+    top: 15vh;
+  }
+}
+
+@media (min-width: 768px) {
+  .text-complete {
+    font-size: 20px;
+    width: 70%;
+    height: 50%;
+    left: 15vw;
+    top: 20vh;
+  }
+}
+
+@media (min-width: 992px) {
+  .text-complete {
+    font-size: 30px;
+    width: 50%;
+    height: 50%;
+    left: 25vw;
+    top: 25vh;
+  }
+}
+
+@media (min-width: 1200px) {
+  .text-complete {
+    font-size: 30px;
+    width: 50%;
+    height: 50%;
+    left: 25vw;
+    top: 25vh;
+  }
+}
+
+.controller {
+  position: absolute;
+  height: 169px;
+  width: 256px;
+  z-index: 2000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  gap: 4px;
+  bottom: 40px;
+  right: 40px;
+}
+
+.controller div {
+  height: calc(50% - 3px);
+  -ms-flex-preferred-size: calc(33.33% - 3px);
+      flex-basis: calc(33.33% - 3px);
+  border-radius: 8px;
+}
+
+.controller .button {
+  outline: 6px solid #d1d1d1;
+  outline-offset: -6px;
+  opacity: 0.8;
+}
+
+.controller .button::after {
+  display: block;
+  content: "";
+  height: 100%;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  -webkit-filter: invert(1);
+          filter: invert(1);
+}
+
+.controller .active {
+  outline: 6px solid white;
+}
+
+.controller .up::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(0);
+          transform: rotate(0);
+}
+
+.controller .left::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(-90deg);
+          transform: rotate(-90deg);
+}
+
+.controller .right::after {
+  background-image: url("../img/arrow.svg");
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+
+.controller .action::after {
+  background-image: url("../img/butterfly-catch-svgrepo-com.svg");
+}
+/*# sourceMappingURL=home2.css.map */
