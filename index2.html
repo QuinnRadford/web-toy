@@ -222,8 +222,8 @@
                     }
                     this.canvasHeight = this.container.height();
                     this.canvasWidth = this.container.width();
-                    this.canvasBoundX = this.canvasWidth - 50;
-                    this.canvasBoundY = this.canvasHeight - 50;
+                    this.canvasBoundX = this.canvasWidth;
+                    this.canvasBoundY = this.canvasHeight;
 
                     this.effectsCanvas.height = this.canvasHeight;
                     this.effectsCanvas.width = this.canvasWidth;
@@ -381,6 +381,7 @@
                     if(finalY < 1) finalY = Math.round(finalY);
                     if(finalX < 1) finalX = Math.round(finalX);
                     if(finalX > this.parentGame.canvasBoundX) finalX = this.parentGame.canvasBoundX;
+                    if(finalY > this.parentGame.canvasBoundY) finalY = this.parentGame.canvasBoundY;
 
                     this.posX = finalX;
                     this.posY = finalY;
